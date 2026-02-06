@@ -10,7 +10,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export default function Sidebar() {
+// r s: recebendo as props de controle do DashboardLayout
+export default function Sidebar({ active_tab, set_active_tab }) {
   const { logout, role } = useAuth();
   const navigate = useNavigate();
   const [pendentes, set_pendentes] = useState(0);
@@ -37,8 +38,6 @@ export default function Sidebar() {
   const current_menu = MENU_STRUCTURE[role] || [];
 
   return (
-    /* r s fix: removemos o 'fixed' e deixamos o flexbox do layout controlar.
-       adicionamos flex-shrink-0 para ela não esmagar. */
     <aside className="w-72 h-full bg-slate-900 flex flex-col text-slate-300 shadow-2xl flex-shrink-0 z-50">
       
       {/* header r s */}
@@ -58,31 +57,45 @@ export default function Sidebar() {
           menu {role}
         </p>
         
-        {current_menu.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `
-              flex items-center justify-between px-5 py-4 rounded-[1.25rem] transition-all duration-300 group
-              ${isActive 
-                ? 'bg-cept-blue text-white shadow-xl shadow-blue-600/20' 
-                : 'hover:bg-slate-800/50 hover:text-white text-slate-400'}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              <item.icon size={20} className="group-hover:scale-110 transition-transform duration-300" />
-              <span className="font-black text-sm tracking-tight lowercase">{item.label}</span>
-            </div>
+        {current_menu.map((item) => {
+          // r s: detecta se o item é o de configurações pelo label
+          const is_config = item.label.toLowerCase().includes('configur');
 
-            {item.badge && pendentes > 0 ? (
-              <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-500/40">
-                {pendentes}
-              </span>
-            ) : (
-              <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-            )}
-          </NavLink>
-        ))}
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              // r s fix: se for config, cancelamos a navegação de rota e trocamos a aba
+              onClick={(e) => {
+                if (is_config) {
+                  e.preventDefault(); 
+                  set_active_tab('configuracoes');
+                } else {
+                  set_active_tab('usuarios');
+                }
+              }}
+              className={({ isActive }) => `
+                flex items-center justify-between px-5 py-4 rounded-[1.25rem] transition-all duration-300 group
+                ${(isActive && !is_config) || (is_config && active_tab === 'configuracoes')
+                  ? 'bg-cept-blue text-white shadow-xl shadow-blue-600/20' 
+                  : 'hover:bg-slate-800/50 hover:text-white text-slate-400'}
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <item.icon size={20} className="group-hover:scale-110 transition-transform duration-300" />
+                <span className="font-black text-sm tracking-tight lowercase">{item.label}</span>
+              </div>
+
+              {item.badge && pendentes > 0 ? (
+                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-500/40">
+                  {pendentes}
+                </span>
+              ) : (
+                <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* perfil e logout r s */}

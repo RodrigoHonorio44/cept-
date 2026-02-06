@@ -2,12 +2,16 @@ import React from 'react';
 // R S: Forçando o caminho relativo completo para evitar ambiguidade no Linux
 import Sidebar from '../components/layout/sidebar.jsx'; 
 
-export default function DashboardLayout({ children }) {
+// r s: adicionando active_tab e set_active_tab nas props para controle de estado
+export default function DashboardLayout({ children, active_tab, set_active_tab }) {
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
       
-      {/* sidebar fixa no fluxo */}
-      <Sidebar />
+      {/* r s nota: passamos as props para a sidebar. 
+          dentro da sua sidebar, os botões devem usar o set_active_tab 
+          em vez de links <Link> ou <a> para evitar o refresh da página.
+      */}
+      <Sidebar active_tab={active_tab} set_active_tab={set_active_tab} />
 
       {/* área principal com scroll independente */}
       <main className="flex-1 h-full overflow-y-auto bg-slate-50 custom-scrollbar scroll-smooth">
