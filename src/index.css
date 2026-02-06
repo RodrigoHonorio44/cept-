@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  /* azul marinho do escudo e da fachada */
+  --color-cept-blue: #003366; 
+  /* laranja/vermelho dos detalhes arquitetônicos */
+  --color-cept-orange: #ed1c24; 
+  /* verde para botões de sucesso e matrícula */
+  --color-cept-green: #10b981; 
+  /* tom escuro para textos e rodapé */
+  --color-cept-dark: #0f172a; 
+  
+  --font-sans: "Inter", sans-serif;
+}
+
+@layer base {
+  /* r s fix: LIBERANDO o scroll para a página fluir */
+  html, body {
+    /* removemos o h-screen e o overflow-hidden */
+    min-height: 100%;
+    overflow-x: hidden; /* evita scroll lateral */
+    overflow-y: auto;   /* permite scroll vertical */
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
+    /* garante que o react ocupe a altura toda sem travar */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6, p, a, button, span, input, label {
+    @apply tracking-tight;
+  }
+
+  /* r s: scrollbar minimalista para não poluir o visual do cept */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full border-2 border-solid border-transparent bg-clip-padding;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-cept-blue;
+  }
+}
+
+@layer components {
+  .container-cept {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
