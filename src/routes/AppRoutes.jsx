@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from '../pages/Home';
-import Cursos from '../pages/public/curso'; // R S: Nova página de cursos
+import Cursos from '../pages/public/curso'; 
+import Noticias from '../pages/public/Noticias'; 
+import SobreNos from '../pages/public/SobreNos'; // R S: Importação da nova página
 import Login from '../pages/auth/Login'; 
 import DashboardRoot from '../pages/root/Dashboard'; 
-import TrocarSenha from '../pages/auth/TrocarSenha'; // R S: Importação da tela
+import TrocarSenha from '../pages/auth/TrocarSenha'; 
 import PrivateRoute from './PrivateRoute';
 import { useAuth } from '../hooks/useAuth';
 
 const AppRoutes = () => {
-  const { user, role, loading, userData } = useAuth(); // R S: userData é essencial aqui
+  const { user, role, loading, userData } = useAuth(); 
   const location = useLocation();
 
   useEffect(() => {
@@ -31,7 +33,9 @@ const AppRoutes = () => {
     <Routes>
       {/* 1. rotas públicas r s */}
       <Route path="/" element={<Home />} />
-      <Route path="/cursos" element={<Cursos />} /> {/* R S: rota adicionada para o header */}
+      <Route path="/cursos" element={<Cursos />} />
+      <Route path="/noticias" element={<Noticias />} /> 
+      <Route path="/sobre" element={<SobreNos />} /> {/* R S: Rota institucional finalizada */}
       
       {/* 2. login com redirecionamento r s */}
       <Route 

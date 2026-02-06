@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; 
-import { Menu, X, LayoutDashboard, LogOut, ShieldCheck, User, BookOpen } from 'lucide-react'; // r s: adicionei BookOpen
+import { Menu, X, LayoutDashboard, LogOut, ShieldCheck, User, BookOpen, Newspaper, Info } from 'lucide-react'; // r s: adicionei Info
 import { useAuth } from '../hooks/useAuth';
 import { toView } from '../utils/Formatters'; 
 import { toast } from 'sonner';
@@ -69,8 +69,23 @@ const Header = () => {
             Cursos
           </Link>
           
-          <Link to="/noticias" onClick={closeMenu} className="text-sm font-black text-slate-600 hover:text-cept-blue transition-colors uppercase tracking-tight">Notícias</Link>
-          <Link to="/sobre" onClick={closeMenu} className="text-sm font-black text-slate-600 hover:text-cept-blue transition-colors uppercase tracking-tight">Sobre Nós</Link>
+          <Link 
+            to="/noticias" 
+            onClick={closeMenu} 
+            className="text-sm font-black text-slate-600 hover:text-cept-blue transition-all uppercase tracking-tight flex items-center gap-2 group"
+          >
+            <Newspaper size={16} className="text-slate-400 group-hover:text-cept-blue transition-colors" />
+            Notícias
+          </Link>
+
+          <Link 
+            to="/sobre" 
+            onClick={closeMenu} 
+            className="text-sm font-black text-slate-600 hover:text-cept-blue transition-all uppercase tracking-tight flex items-center gap-2 group"
+          >
+            <Info size={16} className="text-slate-400 group-hover:text-cept-blue transition-colors" />
+            Sobre Nós
+          </Link>
         </nav>
 
         {/* Ações Dinâmicas R S */}
@@ -140,6 +155,14 @@ const Header = () => {
             
             <Link to="/cursos" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50 flex items-center gap-2 text-slate-700">
               <BookOpen size={20} /> Cursos
+            </Link>
+
+            <Link to="/noticias" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50 flex items-center gap-2 text-slate-700">
+              <Newspaper size={20} /> Notícias
+            </Link>
+
+            <Link to="/sobre" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50 flex items-center gap-2 text-slate-700">
+              <Info size={20} /> Sobre Nós
             </Link>
 
             {isAuthenticated && role === 'root' && (
