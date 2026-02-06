@@ -3,7 +3,8 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from '../pages/Home';
 import Cursos from '../pages/public/curso'; 
 import Noticias from '../pages/public/Noticias'; 
-import SobreNos from '../pages/public/SobreNos'; // R S: Importação da nova página
+import SobreNos from '../pages/public/SobreNos'; 
+import NoticiaDetalhes from '../pages/root/NoticiaDetalhes'; // r s: importação da nova página de detalhes
 import Login from '../pages/auth/Login'; 
 import DashboardRoot from '../pages/root/Dashboard'; 
 import TrocarSenha from '../pages/auth/TrocarSenha'; 
@@ -35,8 +36,11 @@ const AppRoutes = () => {
       <Route path="/" element={<Home />} />
       <Route path="/cursos" element={<Cursos />} />
       <Route path="/noticias" element={<Noticias />} /> 
-      <Route path="/sobre" element={<SobreNos />} /> {/* R S: Rota institucional finalizada */}
+      <Route path="/sobre" element={<SobreNos />} /> 
       
+      {/* r s: nova rota dinâmica para leitura completa da notícia */}
+      <Route path="/noticia/:id" element={<NoticiaDetalhes />} /> 
+
       {/* 2. login com redirecionamento r s */}
       <Route 
         path="/login-aluno" 
