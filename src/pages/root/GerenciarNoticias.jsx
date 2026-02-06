@@ -82,7 +82,7 @@ const GerenciarNoticias = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Newspaper size={24} className="text-cept-orange" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">administração r s</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">administração </span>
             </div>
             <h2 className="text-3xl font-black uppercase italic tracking-tighter">postar novo conteúdo</h2>
           </div>
@@ -146,14 +146,14 @@ const GerenciarNoticias = () => {
 
           <div className="md:col-span-2">
             <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 mb-2 ml-2">
-              <FileText size={14} /> resumo curto (para o card r s)
+              <FileText size={14} /> resumo curto (para o card )
             </label>
             <textarea required value={form.resumo} onChange={(e) => setForm({...form, resumo: e.target.value})} rows="2" maxLength="160" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-medium resize-none italic" placeholder="resumo para a listagem..." />
           </div>
 
           <div className="md:col-span-2">
             <label className="flex items-center gap-2 text-[10px] font-black uppercase text-cept-blue mb-2 ml-2 tracking-widest">
-              <FileText size={14} /> matéria completa (conteúdo principal r s)
+              <FileText size={14} /> matéria completa (conteúdo principal)
             </label>
             <textarea 
               required 
@@ -204,7 +204,7 @@ const GerenciarNoticias = () => {
               </div>
             )
           }) : (
-            <div className="py-10 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-3xl">nenhuma postagem encontrada r s</div>
+            <div className="py-10 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-3xl">nenhuma postagem encontrada </div>
           )}
         </div>
       </div>

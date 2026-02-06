@@ -86,12 +86,10 @@ export default function NoticiaDetalhes() {
             </span>
           </div>
 
-          {/* r s: Título agora com a primeira letra maiúscula via CSS */}
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-[0.95] tracking-tighter uppercase italic mb-8 first-letter:uppercase">
             {noticia.titulo}
           </h1>
 
-          {/* r s: Resumo com a primeira letra maiúscula */}
           <p className="text-xl text-slate-500 font-medium italic leading-relaxed border-l-4 border-blue-600 pl-6 first-letter:uppercase">
             {noticia.resumo}
           </p>
@@ -108,22 +106,26 @@ export default function NoticiaDetalhes() {
 
         {/* Conteúdo da Notícia r s */}
         <div className="max-w-3xl mx-auto">
-          {/* r s: Removido 'lowercase' global. Usamos 'first-letter' para corrigir visualmente 
-              a primeira letra do bloco de texto vindo do banco. */}
           <div className="text-slate-700 text-lg md:text-xl leading-relaxed font-medium whitespace-pre-wrap first-letter:uppercase">
             {noticia.conteudo || noticia.resumo}
           </div>
         </div>
 
-        {/* Rodapé do Artigo r s */}
+       {/* Rodapé do Artigo r s */}
         <footer className="mt-20 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black italic text-xl">
-              R S
+            {/* r s: Box do Logo com o arquivo correto logo_cept.png */}
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 p-2 shadow-sm">
+              <img 
+                src="/logo_cept.png" 
+                alt="Logo CEPT Itaipuaçu" 
+                className="w-full h-full object-contain"
+                onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=CEPT"; }}
+              />
             </div>
             <div>
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">publicado por</p>
-              <p className="text-sm font-black text-slate-900 uppercase italic">equipe cept itaipuaçu r s</p>
+              <p className="text-sm font-black text-slate-900 uppercase italic">equipe cept itaipuaçu</p>
             </div>
           </div>
           

@@ -66,12 +66,12 @@ const Noticias = () => {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-cept-blue mb-4">
               <Newspaper size={20} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">portal de notícias r s</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">portal de notícias </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-slate-800 uppercase italic tracking-tighter leading-none">
               fique por dentro de <span className="text-cept-blue">tudo</span>
             </h1>
-            <p className="mt-4 text-slate-500 font-medium first-letter:uppercase">acompanhe os projetos, eventos e conquistas da nossa comunidade escolar r s.</p>
+            <p className="mt-4 text-slate-500 font-medium first-letter:uppercase">acompanhe os projetos, eventos e conquistas da nossa comunidade escolar .</p>
           </div>
           
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
@@ -88,7 +88,7 @@ const Noticias = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
             <Loader2 className="animate-spin" size={40} />
-            <span className="font-black uppercase text-[10px] tracking-widest">sincronizando r s...</span>
+            <span className="font-black uppercase text-[10px] tracking-widest">sincronizando ...</span>
           </div>
         ) : (
           <>
