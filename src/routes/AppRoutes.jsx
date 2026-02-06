@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from '../pages/Home';
+import Cursos from '../pages/public/curso'; // R S: Nova página de cursos
 import Login from '../pages/auth/Login'; 
 import DashboardRoot from '../pages/root/Dashboard'; 
 import TrocarSenha from '../pages/auth/TrocarSenha'; // R S: Importação da tela
@@ -28,7 +29,9 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      {/* 1. rotas públicas r s */}
       <Route path="/" element={<Home />} />
+      <Route path="/cursos" element={<Cursos />} /> {/* R S: rota adicionada para o header */}
       
       {/* 2. login com redirecionamento r s */}
       <Route 
@@ -68,6 +71,7 @@ const AppRoutes = () => {
         </>
       )}
 
+      {/* fallback r s */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

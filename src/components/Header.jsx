@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; 
-import { Menu, X, LayoutDashboard, LogOut, ShieldCheck, User } from 'lucide-react';
+import { Menu, X, LayoutDashboard, LogOut, ShieldCheck, User, BookOpen } from 'lucide-react'; // r s: adicionei BookOpen
 import { useAuth } from '../hooks/useAuth';
 import { toView } from '../utils/Formatters'; 
 import { toast } from 'sonner';
@@ -16,13 +16,12 @@ const Header = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // r s: garante o redirecionamento ANTES de limpar o estado se necessário
   const handle_logout = async () => {
     const id_toast = toast.loading('encerrando sessão r s...');
     try {
       closeMenu();
       await logout();
-      navigate('/', { replace: true }); // replace evita que o usuário volte com o botão "voltar" do navegador
+      navigate('/', { replace: true }); 
       toast.success('até logo!', { id: id_toast });
     } catch (error) {
       toast.error('falha ao sair', { id: id_toast });
@@ -32,6 +31,7 @@ const Header = () => {
   const formatDisplayName = (name) => {
     if (!name) return "";
     const lowerName = name.toLowerCase();
+    // r s: priorizando sua regra de nome R S
     if (lowerName === 'rodrigo da silva honorio' || lowerName === 'r s') {
       return 'R S';
     }
@@ -40,9 +40,8 @@ const Header = () => {
 
   return (
     <header className="bg-white sticky top-0 z-50 border-b border-gray-100 shadow-sm/50">
-      <div className="container-cept h-20 flex items-center justify-between">
+      <div className="container-cept h-20 flex items-center justify-between px-6">
         
-        {/* r s: Clique na marca sempre reseta a navegação para a home pública */}
         <Link 
           to="/" 
           className="flex items-center gap-3 group active:scale-95 transition-all" 
@@ -59,9 +58,17 @@ const Header = () => {
           </div>
         </Link>
 
-        {/* Menu Desktop */}
+        {/* Menu Desktop r s */}
         <nav className="hidden lg:flex items-center gap-8">
-          <Link to="/cursos" onClick={closeMenu} className="text-sm font-black text-slate-600 hover:text-cept-blue transition-colors uppercase tracking-tight">Cursos</Link>
+          <Link 
+            to="/cursos" 
+            onClick={closeMenu} 
+            className="text-sm font-black text-slate-600 hover:text-cept-blue transition-all uppercase tracking-tight flex items-center gap-2 group"
+          >
+            <BookOpen size={16} className="text-slate-400 group-hover:text-cept-blue transition-colors" />
+            Cursos
+          </Link>
+          
           <Link to="/noticias" onClick={closeMenu} className="text-sm font-black text-slate-600 hover:text-cept-blue transition-colors uppercase tracking-tight">Notícias</Link>
           <Link to="/sobre" onClick={closeMenu} className="text-sm font-black text-slate-600 hover:text-cept-blue transition-colors uppercase tracking-tight">Sobre Nós</Link>
         </nav>
@@ -131,13 +138,15 @@ const Header = () => {
           <nav className="flex flex-col gap-5 font-black uppercase">
             <Link to="/" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50 text-cept-blue italic">Início</Link>
             
+            <Link to="/cursos" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50 flex items-center gap-2 text-slate-700">
+              <BookOpen size={20} /> Cursos
+            </Link>
+
             {isAuthenticated && role === 'root' && (
                <Link to="/root/dashboard" onClick={closeMenu} className="text-lg text-cept-orange flex items-center gap-2 py-2 border-b border-slate-50">
                  <ShieldCheck size={20} /> Painel Root
                </Link>
             )}
-            
-            <Link to="/cursos" onClick={closeMenu} className="text-lg py-2 border-b border-slate-50">Cursos</Link>
             
             {isAuthenticated ? (
               <button 
