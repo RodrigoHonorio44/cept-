@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase'; 
-import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth'; 
 import { 
   ArrowRight, Play, Globe, Cpu, Microscope, Trophy, 
-  Bell, Newspaper, Calendar 
+  Bell, Calendar, Heart 
 } from 'lucide-react';
 
-const CardAcesso = ({ titulo, cor, desc, to }) => (
-  <Link 
-    to={to} 
+const CardAcesso = ({ titulo, cor, desc, onClick }) => (
+  <div 
+    onClick={onClick}
     className={`p-10 rounded-[2.5rem] shadow-2xl ${cor} text-white hover:scale-[1.05] transition-all duration-500 group cursor-pointer border border-white/10 relative overflow-hidden flex flex-col justify-between min-h-[300px]`}
   >
     <div className="relative z-10 text-center">
@@ -22,11 +23,13 @@ const CardAcesso = ({ titulo, cor, desc, to }) => (
       </div>
     </div>
     <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-  </Link>
+  </div>
 );
 
 export default function Home() {
+  const { user, role, userData } = useAuth(); 
   const [conteudo, set_conteudo] = useState([]);
+  const navigate = useNavigate();
 
   const avisoReserva = [{
     id: 'reserva',
@@ -37,20 +40,70 @@ export default function Home() {
     data: new Date().toLocaleDateString('pt-br')
   }];
 
+  // R S: Lógica de portal inteligente - Resolvendo redirecionamento da Secretaria
+  const handlePortalClick = (type) => {
+    // 1. Se não estiver logado, manda para o login específico
+    if (!user) {
+      navigate(type === 'aluno' ? '/login-aluno' : '/login-professor');
+      return;
+    }
+
+    const r = role?.toLowerCase();
+    const cargo = userData?.cargo?.toLowerCase();
+
+    // 2. Lógica para ROOT (Passe livre) r s
+    if (r === 'root') {
+      navigate('/root/selecao');
+      return;
+    }
+
+    // 3. Portal do Aluno
+    if (type === 'aluno') {
+      if (r === 'aluno' || r === 'pai') navigate('/aluno/dashboard');
+      else navigate('/login-aluno');
+      return;
+    }
+
+    // 4. Lógica para Funcionários e Secretaria Virtual r s
+    if (type === 'professor' || type === 'secretaria') {
+      
+      // Se for Administrativo (Tati), vai sempre para o Dashboard de Gestão
+      if (r === 'funcionario' && (cargo === 'administrativo' || cargo === 'diretora')) {
+        navigate('/funcionario/dashboard');
+        return;
+      }
+
+      // Se for Aluno ou Pai clicando em "Secretaria Virtual", vai para a página de serviços
+      if (type === 'secretaria' && (r === 'aluno' || r === 'pai')) {
+        navigate('/secretaria');
+        return;
+      }
+
+      // Se for Professor r s
+      if (r === 'funcionario') {
+        navigate('/funcionario/dashboard');
+        return;
+      }
+
+      // Fallback
+      navigate('/login-professor');
+    }
+  };
+
   useEffect(() => {
-    const agora = new Date();
-    
     const q = query(
       collection(db, "noticias"),
       where("exibirNoticias", "==", true),
-      where("expiresAt", ">", agora),
-      orderBy("expiresAt", "desc"), 
       limit(3)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      set_conteudo(docs.length > 0 ? docs : avisoReserva);
+      if (!snapshot.empty) {
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        set_conteudo(docs);
+      } else {
+        set_conteudo(avisoReserva);
+      }
     }, (error) => {
       console.error("erro ao carregar home r s:", error);
       set_conteudo(avisoReserva);
@@ -61,7 +114,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f3f4f6]">
-      {/* Banner Principal - Hero r s */}
+      {/* Banner Principal */}
       <section className="relative h-[85vh] flex items-center justify-start overflow-hidden rounded-b-[4rem] shadow-2xl">
         <div className="absolute inset-0 z-0">
           <img 
@@ -90,14 +143,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Cards de Portais */}
+      {/* Cards de Portais r s */}
       <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-30 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <CardAcesso to="/login-aluno" titulo="Portal do Aluno" cor="bg-[#0f172a]" desc="acesse suas notas, boletim, frequências e conteúdos digitais de forma rápida r s." />
-        <CardAcesso to="/login-professor" titulo="Portal do Professor" cor="bg-[#1e293b]" desc="gerenciamento de turmas, diário de classe, planejamento e acompanhamento pedagógico r s." />
-        <CardAcesso to="/login-professor" titulo="Secretaria Virtual" cor="bg-[#22c55e]" desc="solicitação de documentos, matrículas e suporte administrativo totalmente online r s." />
+        <CardAcesso 
+          onClick={() => handlePortalClick('aluno')} 
+          titulo="Portal do Aluno" 
+          cor="bg-[#0f172a]" 
+          desc="acesse suas notas, boletim, frequências e conteúdos digitais de forma rápida r s." 
+        />
+        <CardAcesso 
+          onClick={() => handlePortalClick('professor')} 
+          titulo="Portal do Professor" 
+          cor="bg-[#1e293b]" 
+          desc="gerenciamento de turmas, diário de classe, planejamento e acompanhamento pedagógico r s." 
+        />
+        <CardAcesso 
+          onClick={() => handlePortalClick('secretaria')} 
+          titulo="Secretaria Virtual" 
+          cor="bg-[#22c55e]" 
+          desc="solicitação de documentos, matrículas e suporte administrativo totalmente online r s." 
+        />
       </div>
 
-      {/* SEÇÃO DE AVISOS DINÂMICAS R S */}
+      {/* Seção de Comunicados */}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="flex items-center gap-4 mb-12">
           <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-lg">
@@ -105,7 +173,7 @@ export default function Home() {
           </div>
           <div>
             <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-900 leading-none">Comunicados</h2>
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">atualizações em tempo real r s</p>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">atualizações em tempo real </p>
           </div>
         </div>
 
@@ -115,11 +183,9 @@ export default function Home() {
               <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur px-4 py-1.5 rounded-full text-[9px] font-black uppercase text-blue-600 shadow-sm">
                 {item.id === 'reserva' ? 'status' : item.categoria}
               </div>
-              
               <div className="h-48 overflow-hidden bg-slate-100">
                 <img src={item.imagem} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               </div>
-
               <div className="p-8 flex flex-col flex-grow">
                 <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase mb-3">
                   <Calendar size={12} /> {item.data}
@@ -130,8 +196,6 @@ export default function Home() {
                 <p className="text-slate-500 text-sm leading-relaxed lowercase italic line-clamp-3 mb-6 flex-grow">
                   {item.resumo}
                 </p>
-                
-                {/* r s: AGORA O LINK APONTA PARA A NOTÍCIA ESPECÍFICA */}
                 <Link 
                   to={item.id === 'reserva' ? "/noticias" : `/noticia/${item.id}`} 
                   className="mt-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:gap-4 transition-all"
@@ -144,14 +208,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Seção Sobre o CEPT r s */}
+      {/* Estrutura r s */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="relative group flex justify-center">
+            <div className="absolute inset-0 bg-red-600 rounded-[3rem] -rotate-3 opacity-10"></div>
+            <div className="relative bg-black aspect-[9/16] w-full max-w-[380px] rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white">
+              <iframe 
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/PjlniRSFNzs?autoplay=1&mute=1&loop=1&playlist=PjlniRSFNzs&controls=0&modestbranding=1" 
+                title="Vídeo Institucional CEPT"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-3 text-red-600 font-black uppercase tracking-widest text-xs mb-6">
+              <Heart size={18} fill="currentColor" /> Educação que Transforma
+            </div>
+            <h2 className="text-5xl font-black text-slate-900 mb-8 leading-none tracking-tighter uppercase italic">
+              Um espaço para <br/> <span className="text-red-600">viver e aprender</span>.
+            </h2>
+            <p className="text-slate-500 text-lg leading-relaxed mb-10 font-medium lowercase italic">
+              no cept leonel brizola, cada detalhe foi pensado para o desenvolvimento integral dos nossos alunos .
+            </p>
+            <div className="flex items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <Trophy className="text-red-600" size={32} />
+                <div>
+                  <h4 className="font-black text-slate-900 uppercase italic text-sm">Estrutura de Excelência</h4>
+                  <p className="text-xs text-slate-500 lowercase">ambiente seguro e moderno para o ensino em tempo integral .</p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ensino Trilíngue r s */}
       <section className="max-w-7xl mx-auto px-6 py-40 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
         <div className="relative">
           <h3 className="text-5xl md:text-6xl font-black text-slate-900 mb-10 leading-[1] tracking-tighter uppercase italic">
-            Ensino <span className="text-blue-600">Trilíngue</span> <br/> e infraestrutura global r s.
+            Ensino <span className="text-blue-600">Trilíngue</span> <br/> e infraestrutura global.
           </h3>
           <p className="text-slate-500 text-lg leading-relaxed mb-12 font-medium lowercase italic">
-            o cept itaipuaçu é a maior escola em tempo integral do brasil. oferecemos ensino fundamental com foco em tecnologia, robótica e matemática. nosso campus é trilíngue (português, inglês e mandarim).
+            o cept itaipuaçu é a maior escola em tempo integral do brasil .
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 font-black uppercase italic text-xs tracking-tight">
             <div className="flex items-center gap-4 text-slate-800"><Globe className="text-blue-600" /> Campus Trilíngue</div>
@@ -160,7 +261,6 @@ export default function Home() {
             <div className="flex items-center gap-4 text-slate-800"><Trophy className="text-purple-600" /> Formação Completa</div>
           </div>
         </div>
-
         <div className="relative group">
           <div className="absolute inset-0 bg-blue-600 rounded-[3rem] rotate-3 opacity-10"></div>
           <div className="relative bg-slate-200 aspect-video rounded-[2.5rem] shadow-2xl flex items-center justify-center overflow-hidden border-8 border-white transition-transform duration-500 group-hover:scale-[1.02]">

@@ -2,15 +2,16 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Lock, ShieldCheck, Eye, EyeOff, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { toast } from 'react-hot-toast'; // r s: importação do toast
 
 export default function TrocarSenha() {
   const [senha, setSenha] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [verSenha, setVerSenha] = useState(false);
+  const [verConfirmar, setVerConfirmar] = useState(false); // r s: novo estado para o olho da contra-senha
   const { atualizarSenhaPrimeiroAcesso, userData } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // R S: Funções de validação em tempo real
   const temMaiuscula = /[A-Z]/.test(senha);
   const temEspecial = /[!@#$%^&*(),.?":{}|<>]/.test(senha);
   const temTamanhoMin = senha.length >= 6;
@@ -19,26 +20,26 @@ export default function TrocarSenha() {
     e.preventDefault();
     
     if (!temTamanhoMin || !temMaiuscula || !temEspecial) {
-      alert("a senha não atende aos requisitos de segurança r s");
+      toast.error("a senha não atende aos requisitos de segurança r s");
       return;
     }
 
     if (senha !== confirmar) {
-      alert("as senhas não coincidem r s");
+      toast.error("as senhas não coincidem r s");
       return;
     }
 
     try {
-      await atualizarSenhaPrimeiroAcesso(senha);
-      alert("senha atualizada com sucesso!");
+      const senhaPadronizada = senha.toLowerCase();
+      await atualizarSenhaPrimeiroAcesso(senhaPadronizada);
+      toast.success("senha atualizada com sucesso! r s");
       navigate('/'); 
     } catch (error) {
       console.error(error);
-      alert("erro ao atualizar. se demorou muito, faça login novamente r s.");
+      toast.error("erro ao atualizar. faça login novamente r s.");
     }
   };
 
-  // r s helper para os badges de validação
   const BadgeValidacao = ({ condicao, texto }) => (
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all ${condicao ? 'bg-green-50 border-green-200 text-green-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
       {condicao ? <CheckCircle2 size={12} /> : <Circle size={12} />}
@@ -69,7 +70,7 @@ export default function TrocarSenha() {
               <input
                 type={verSenha ? "text" : "password"}
                 placeholder="nova senha"
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all lowercase font-bold text-sm shadow-inner"
+                className="w-full pl-12 pr-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all font-bold text-sm shadow-inner"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
@@ -83,7 +84,6 @@ export default function TrocarSenha() {
               </button>
             </div>
 
-            {/* R S: Indicadores de Requisitos */}
             <div className="flex flex-wrap gap-2 pt-1">
               <BadgeValidacao condicao={temTamanhoMin} texto="6+ caracteres" />
               <BadgeValidacao condicao={temMaiuscula} texto="1 maiúscula" />
@@ -91,17 +91,24 @@ export default function TrocarSenha() {
             </div>
           </div>
 
-          {/* Campo Confirmar Senha */}
+          {/* Campo Confirmar Senha com Olho r s */}
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
-              type="password"
+              type={verConfirmar ? "text" : "password"}
               placeholder="confirmar nova senha"
-              className="w-full pl-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all lowercase font-bold text-sm shadow-inner"
+              className="w-full pl-12 pr-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all font-bold text-sm shadow-inner"
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               required
             />
+            <button 
+              type="button" 
+              onClick={() => setVerConfirmar(!verConfirmar)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cept-blue transition-colors"
+            >
+              {verConfirmar ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <button

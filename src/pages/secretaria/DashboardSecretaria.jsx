@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
-import DashboardLayout from '../../layouts/dashboardlayout';
 import FormSolicitacaoSecretaria from '../../components/forms/FormSolicitacaoSecretaria';
 import { 
-  UserPlus, 
-  Clock, 
-  CheckCircle, 
-  Users, 
-  Search, 
-  ArrowRight,
-  ClipboardList
+  UserPlus, Clock, CheckCircle, Users, Search, 
+  ArrowRight, ClipboardList, LayoutDashboard, 
+  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
 export default function DashboardSecretaria() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
   const [busca, setBusca] = useState('');
 
-  // 1. Monitorar solicitações em tempo real (Padrão R S)
   useEffect(() => {
-    // Note: 'limit(10)' mantém a manutenção leve para o Firebase
     const q = query(
       collection(db, "solicitacoes_acesso"),
       orderBy("dataSolicitacao", "desc"),
@@ -29,166 +23,185 @@ export default function DashboardSecretaria() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const docs = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        nome: doc.data().nome?.toLowerCase() || '',
+        email: doc.data().email?.toLowerCase() || ''
+      }));
       setSolicitacoes(docs);
-      
-      // Atualiza os contadores baseados no snapshot atual
       setStats({
         pendentes: docs.filter(d => d.status === 'pendente').length,
         aprovados: docs.filter(d => d.status === 'aprovado').length
       });
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Filtro de busca local para agilizar a manutenção
   const dadosFiltrados = solicitacoes.filter(s => 
-    s.nome.toLowerCase().includes(busca.toLowerCase()) || 
-    s.email.toLowerCase().includes(busca.toLowerCase())
+    s.nome.includes(busca.toLowerCase()) || s.email.includes(busca.toLowerCase())
   );
 
   return (
-    <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+    // ESTA É A TRAVA: h-screen e overflow-hidden impedem a página de subir ou descer
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans antialiased text-slate-900">
+      
+      {/* SIDEBAR DINÂMICA (Igual à do seu outro projeto) */}
+      <aside className={`${sidebarOpen ? "w-72" : "w-24"} bg-[#0f172a] flex flex-col transition-all duration-500 relative z-50 shrink-0`}>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute -right-3 top-12 bg-white border border-slate-200 text-slate-400 p-1.5 rounded-full shadow-sm z-60"
+        >
+          {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        </button>
+
+        <div className="h-28 flex items-center px-8 border-b border-white/5">
+          <h1 className={`text-white font-black italic uppercase tracking-tighter transition-all ${sidebarOpen ? "text-2xl" : "text-xl mx-auto"}`}>
+            {sidebarOpen ? <>Cept <span className="text-blue-500">Secretária</span></> : "C"}
+          </h1>
+        </div>
+
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <NavButton icon={LayoutDashboard} label="dashboard" active sidebarOpen={sidebarOpen} />
+          <NavButton icon={ShieldCheck} label="aprovações" sidebarOpen={sidebarOpen} />
+          <NavButton icon={Settings} label="configurações" sidebarOpen={sidebarOpen} />
+        </nav>
+
+        <div className="p-4 border-t border-white/5">
+          <button className={`flex items-center gap-4 w-full p-4 text-red-400 rounded-2xl hover:bg-red-500/10 transition-all font-black text-[10px] uppercase tracking-widest ${!sidebarOpen && "justify-center"}`}>
+            <LogOut size={22} />
+            {sidebarOpen && <span>Sair</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* CONTEÚDO PRINCIPAL (Main) */}
+      <main className="flex-1 flex flex-col overflow-hidden">
         
-        {/* HEADER ESTRATÉGICO */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* HEADER SUPERIOR FIXO */}
+        <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-40">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
-              Centro de <span className="text-cept-blue">Operações</span>
-            </h1>
-            <p className="text-slate-400 text-[10px] font-black tracking-[0.3em] uppercase mt-1 leading-none">
-              Secretaria Escolar • R S System 2026
-            </p>
+            <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Secretaria Escolar</h2>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight italic uppercase">Centro de Operações</h1>
           </div>
 
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-3 hover:bg-cept-blue transition-all shadow-2xl shadow-slate-200 group active:scale-95"
+            className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
           >
-            <UserPlus size={22} className="group-hover:scale-110 transition-transform" />
-            NOVA MATRÍCULA / ACESSO
+            <UserPlus size={18} /> {sidebarOpen && "Nova Matrícula"}
           </button>
         </header>
 
-        {/* CARDS DE INDICADORES (Componentizados para fácil manutenção) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard 
-            icon={<Clock size={24} />} 
-            label="Aguardando Root" 
-            value={stats.pendentes} 
-            bgColor="bg-orange-50" 
-            textColor="text-orange-600" 
-          />
-          <StatCard 
-            icon={<CheckCircle size={24} />} 
-            label="Aprovados Recentemente" 
-            value={stats.aprovados} 
-            bgColor="bg-green-50" 
-            textColor="text-green-600" 
-          />
-          <StatCard 
-            icon={<Users size={24} />} 
-            label="Alunos Ativos" 
-            value="--" 
-            bgColor="bg-blue-50" 
-            textColor="text-cept-blue" 
-          />
-        </div>
-
-        {/* ÁREA DE TRABALHO: HISTÓRICO DE SOLICITAÇÕES */}
-        <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden transition-all hover:shadow-md">
-          <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-slate-900 p-2.5 rounded-xl text-white shadow-lg shadow-slate-200">
-                <ClipboardList size={18} />
-              </div>
-              <h2 className="font-black text-slate-800 uppercase tracking-tight text-lg italic">Últimas Movimentações</h2>
-            </div>
+        {/* ÁREA DE SCROLL (Onde o conteúdo realmente vive) */}
+        <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC]">
+          <div className="max-w-7xl mx-auto space-y-8">
             
-            <div className="relative w-full md:w-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-              <input 
-                type="text" 
-                placeholder="Localizar pedido..." 
-                className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-cept-blue w-full md:w-72 transition-all"
-                onChange={(e) => setBusca(e.target.value)}
-              />
+            {/* CARDS INDICADORES */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard title="aguardando" value={stats.pendentes} color="amber" icon={Clock} />
+              <StatCard title="aprovados" value={stats.aprovados} color="emerald" icon={CheckCircle} />
+              <StatCard title="ativos" value="--" color="blue" icon={Users} />
+            </div>
+
+            {/* TABELA DE MOVIMENTAÇÕES */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                  <div className="bg-slate-900 p-2 rounded-xl text-white">
+                    <ClipboardList size={18} />
+                  </div>
+                  <h3 className="font-black text-slate-800 uppercase italic text-sm">Últimas Movimentações</h3>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="localizar..." 
+                    className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-bold w-64 focus:ring-2 focus:ring-blue-600 outline-none lowercase"
+                    onChange={(e) => setBusca(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <table className="w-full text-left">
+                <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-widest">
+                  <tr>
+                    <th className="px-8 py-5">candidato</th>
+                    <th className="px-8 py-5">categoria</th>
+                    <th className="px-8 py-5">data</th>
+                    <th className="px-8 py-5 text-right">situação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {dadosFiltrados.map((sol) => (
+                    <tr key={sol.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col">
+                          <span className="font-black text-slate-700 text-xs lowercase">{sol.nome}</span>
+                          <span className="text-[10px] text-slate-400">{sol.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className="text-[9px] font-black uppercase bg-slate-100 px-3 py-1 rounded-lg text-slate-500">
+                          {sol.role}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6 text-[11px] text-slate-500 font-bold italic">
+                        {sol.dataSolicitacao?.seconds ? new Date(sol.dataSolicitacao.seconds * 1000).toLocaleDateString() : '---'}
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center justify-end gap-4">
+                          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${
+                            sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                          }`}>
+                            {sol.status}
+                          </span>
+                          <ArrowRight size={14} className="text-slate-200 group-hover:text-blue-600 transition-all" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
+        </section>
+      </main>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-[0.2em]">
-                <tr>
-                  <th className="px-10 py-5">Candidato</th>
-                  <th className="px-10 py-5">Categoria</th>
-                  <th className="px-10 py-5">Data do Envio</th>
-                  <th className="px-10 py-5">Situação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {dadosFiltradas.length > 0 ? dadosFiltradas.map((sol) => (
-                  <tr key={sol.id} className="group hover:bg-slate-50/50 transition-colors cursor-default">
-                    <td className="px-10 py-6">
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-700 text-sm capitalize tracking-tight">{sol.nome}</span>
-                        <span className="text-[11px] text-slate-400 font-bold lowercase">{sol.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6">
-                      <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                        {sol.role}
-                      </span>
-                    </td>
-                    <td className="px-10 py-6 text-[12px] text-slate-500 font-bold italic">
-                      {new Date(sol.dataSolicitacao).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="px-10 py-6">
-                      <div className="flex items-center justify-between">
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                          sol.status === 'pendente' 
-                          ? 'bg-orange-100 text-orange-600 animate-pulse' 
-                          : 'bg-green-100 text-green-600 shadow-sm shadow-green-100'
-                        }`}>
-                          {sol.status === 'pendente' ? 'Em Análise' : 'Confirmado'}
-                        </span>
-                        <ArrowRight size={14} className="text-slate-200 group-hover:text-cept-blue group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="4" className="p-20 text-center text-slate-300 font-bold uppercase tracking-widest text-xs italic">
-                      Nenhum registro encontrado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* MODAL DE CADASTRO */}
-      <FormSolicitacaoSecretaria 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
-    </DashboardLayout>
+      <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+    </div>
   );
 }
 
-// Subcomponente de Card R S
-function StatCard({ icon, label, value, bgColor, textColor }) {
+// Componentes Auxiliares (Mesmo padrão da outra Dashboard)
+function NavButton({ icon: Icon, label, active, sidebarOpen }) {
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-      <div className={`w-14 h-14 ${bgColor} ${textColor} rounded-2xl flex items-center justify-center mb-6 shadow-sm`}>
-        {icon}
+    <button className={`flex items-center gap-4 w-full px-4 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all duration-300 ${
+      active ? "bg-blue-600 text-white shadow-xl shadow-blue-900/20" : "text-slate-500 hover:bg-white/5 hover:text-white"
+    } ${!sidebarOpen && "justify-center px-0"}`}>
+      <Icon size={22} />
+      {sidebarOpen && <span>{label}</span>}
+    </button>
+  );
+}
+
+function StatCard({ title, value, color, icon: Icon }) {
+  const colors = {
+    amber: "bg-orange-500",
+    emerald: "bg-emerald-500",
+    blue: "bg-blue-600",
+  };
+  return (
+    <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div className={`${colors[color]} p-3 rounded-2xl text-white shadow-lg`}>
+          <Icon size={20} />
+        </div>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
       </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-3xl font-black text-slate-900 tracking-tighter">{value}</p>
+      <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{value}</h3>
     </div>
   );
 }
