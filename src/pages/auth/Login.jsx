@@ -21,15 +21,11 @@ export default function Login() {
       
       console.log("🚀 Autenticando R S:", emailLimpo);
       
-      // r s: A senha NÃO deve ter toLowerCase(), pois senhas são case-sensitive no Firebase
+      // r s: A senha NÃO deve ter toLowerCase() para não quebrar o Auth
       await signInWithEmailAndPassword(auth, emailLimpo, senha);
-      
-      // O AppRoutes detectará a mudança de estado e o userData.deve_trocar_senha
       
     } catch (err) {
       console.error("Erro Auth R S:", err.code);
-      
-      // r s: Unificando erros de credenciais para maior segurança
       if (
         err.code === 'auth/user-not-found' || 
         err.code === 'auth/wrong-password' || 
@@ -48,10 +44,23 @@ export default function Login() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6">
-      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Área de Acesso CEPT</h2>
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">Identifique-se para comando</p>
+      <div className="bg-white p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-slate-100">
+        
+        {/* Topo com Nova Logo R S */}
+        <div className="flex flex-col items-center text-center mb-10">
+          <img 
+            src="/10.png" 
+            alt="Logo CEPT" 
+            width={120}
+            height={120}
+            className="h-24 md:h-32 w-auto object-contain mb-4 drop-shadow-sm" 
+          />
+          <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
+            Área de Acesso <span className="text-blue-600">CEPT</span>
+          </h2>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">
+            Identifique-se para comando r s
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -99,9 +108,9 @@ export default function Login() {
 
           <button 
             disabled={loading}
-            className="w-full bg-[#0f172a] hover:bg-blue-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3 uppercase italic tracking-widest disabled:opacity-50 active:scale-95"
+            className="w-full bg-[#102937] hover:bg-blue-700 text-white font-black py-5 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3 uppercase italic tracking-widest disabled:opacity-50 active:scale-95"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : "Validar Acesso CEPT"}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : "VALIDAR ACESSO CEPT"}
           </button>
         </form>
       </div>

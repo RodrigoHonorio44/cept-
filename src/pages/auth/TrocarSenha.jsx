@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { Lock, ShieldCheck, Eye, EyeOff, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function TrocarSenha() {
@@ -38,11 +38,8 @@ export default function TrocarSenha() {
     }
 
     try {
-      // r s: enviamos a senha para o context que cuidará do Auth e do Firestore
       await atualizarSenhaPrimeiroAcesso(senha); 
       toast.success("senha atualizada! acesso liberado r s");
-      
-      // r s: após o sucesso, redireciona para o dashboard
       navigate('/dashboard'); 
     } catch (error) {
       console.error(error);
@@ -60,16 +57,26 @@ export default function TrocarSenha() {
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0f172a] flex items-center justify-center px-4 overflow-y-auto">
       <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 border border-slate-100 my-8">
+        
+        {/* Topo com Nova Logo R S */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <ShieldCheck className="text-blue-600" size={40} />
-          </div>
-          <h2 className="text-2xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-            comando r s: troca obrigatória
-          </h2>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-4 leading-tight">
-            olá {userData?.nome || 'operador'}, defina sua credencial definitiva.
-          </p>
+          <img 
+            src="/10.png" 
+            alt="Logo CEPT" 
+            width={120}
+            height={120}
+            className="h-24 md:h-28 w-auto object-contain mx-auto mb-6 drop-shadow-md transition-transform hover:scale-105 duration-500" 
+          />
+         {/* Cabeçalho Refinado R S */}
+<div className="text-center mb-8">
+  <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+    Configuração de Segurança
+  </h2>
+  <p className="text-[12px] text-slate-500 font-medium mt-2 leading-relaxed">
+    Olá <span className="text-blue-600 font-bold">{userData?.nome || 'operador'}</span>, 
+    para sua proteção, crie uma nova senha para o sistema .
+  </p>
+</div>
         </div>
 
         <form onSubmit={handleTroca} className="space-y-5">
@@ -78,7 +85,7 @@ export default function TrocarSenha() {
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input
                 type={verSenha ? "text" : "password"}
-                placeholder="nova senha"
+                placeholder="nova senha r s"
                 className="w-full pl-14 pr-12 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 transition-all font-bold text-sm"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
@@ -104,7 +111,7 @@ export default function TrocarSenha() {
             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input
               type={verConfirmar ? "text" : "password"}
-              placeholder="confirmar nova senha"
+              placeholder="confirmar nova credencial"
               className="w-full pl-14 pr-12 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 transition-all font-bold text-sm"
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
@@ -121,9 +128,9 @@ export default function TrocarSenha() {
 
           <button
             type="submit"
-            className="w-full bg-[#0f172a] hover:bg-blue-600 text-white font-black py-5 rounded-2xl transition-all uppercase italic tracking-[0.2em] text-[11px] shadow-xl flex items-center justify-center gap-3 group active:scale-95"
+            className="w-full bg-[#102937] hover:bg-blue-600 text-white font-black py-5 rounded-2xl transition-all uppercase italic tracking-[0.2em] text-[11px] shadow-xl flex items-center justify-center gap-3 group active:scale-95"
           >
-            validar e entrar <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+            VALIDAR ACESSO CEPT<ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
           </button>
         </form>
       </div>

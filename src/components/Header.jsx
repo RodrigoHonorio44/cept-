@@ -48,9 +48,9 @@ const Header = () => {
           onClick={closeMenu}
         >
           <img 
-            src="/logo_cept.png" 
+            src="/10.png" 
             alt="Logo CEPT" 
-            className="h-12 md:h-14 w-auto object-contain" 
+            className="h-15 md:h-30 w-auto object-contain" 
           />
           <div className="hidden sm:flex flex-col">
             <span className="text-xl font-black text-cept-blue leading-none tracking-tighter uppercase italic">CEPT Itaipuaçu</span>
