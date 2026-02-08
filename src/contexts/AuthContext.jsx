@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { auth, db } from '../services/firebase'; 
-import { onAuthStateChanged, signOut, updatePassword } from 'firebase/auth'; // R S: adicionado updatePassword
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore'; // R S: adicionado updateDoc
+import { onAuthStateChanged, signOut, updatePassword } from 'firebase/auth'; 
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore'; 
 
 export const AuthContext = createContext({});
 
@@ -15,20 +15,13 @@ export function AuthProvider({ children }) {
     let unsubDoc = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (userAuth) => {
-      setLoading(true);
-
-      if (unsubDoc) {
-        unsubDoc();
-        unsubDoc = null;
-      }
-
+      // Importante: Não setamos loading como false aqui ainda! r s
       if (userAuth) {
         const userRef = doc(db, "users", userAuth.uid);
         
         unsubDoc = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            
             setUserData(data);
             setRole(data.role || 'aluno');
             setUser(userAuth);
@@ -37,8 +30,7 @@ export function AuthProvider({ children }) {
             setRole('aluno');
             setUserData({ nome: 'usuário novo', role: 'aluno' });
           }
-          
-          setLoading(false);
+          setLoading(false); // Só libera o loading após ler o Firestore r s
         }, (error) => {
           console.error("Erro Firestore R S:", error);
           setLoading(false);
@@ -47,7 +39,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         setRole(null);
         setUserData(null);
-        setLoading(false);
+        setLoading(false); // Libera o loading se não houver usuário logado r s
       }
     });
 
@@ -57,20 +49,12 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // R S: Função para trocar a senha no primeiro acesso
   const atualizarSenhaPrimeiroAcesso = async (novaSenha) => {
     if (!auth.currentUser) throw new Error("usuário não autenticado r s");
-
     try {
-      // 1. Atualiza no Firebase Auth
       await updatePassword(auth.currentUser, novaSenha);
-      
-      // 2. Atualiza no Firestore para o onSnapshot ler a mudança
       const userRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userRef, {
-        deve_trocar_senha: false
-      });
-
+      await updateDoc(userRef, { deve_trocar_senha: false });
       return { success: true };
     } catch (error) {
       console.error("Erro na troca de senha r s:", error);
@@ -83,14 +67,16 @@ export function AuthProvider({ children }) {
     role,
     userData,
     loading,
-    atualizarSenhaPrimeiroAcesso, // R S: função exportada aqui
+    atualizarSenhaPrimeiroAcesso,
     logout: () => signOut(auth),
     isAuthenticated: !!user
   }), [user, role, userData, loading]);
 
+  // R S: Renderizamos o Provider sempre, e o AppRoutes cuida do loader interno.
+  // Isso evita que o App inteiro "desapareça" da memória.
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

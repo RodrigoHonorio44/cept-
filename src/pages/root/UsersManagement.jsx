@@ -3,7 +3,7 @@ import { db, auth } from '../../services/firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import DashboardLayout from '../../layouts/dashboardlayout';
-import FormUsuarioSistema from '../../components/forms/FormUsuarioSistema'; // import minúsculo
+import FormUsuarioSistema from '../../components/forms/formusuariosistema'; // import minúsculo
 import { KeyRound, UserPlus, ShieldCheck, Mail, Search } from 'lucide-react';
 
 export default function UsersManagement() {

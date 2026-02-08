@@ -12,9 +12,9 @@ import SecretariaVirtual from '../pages/secretaria/SecretariaVirtual';
 import TrocarSenha from '../pages/auth/TrocarSenha'; 
 import PrivateRoute from './PrivateRoute';
 import { useAuth } from '../hooks/useAuth';
-import { Shield, Landmark, Users, FileText } from 'lucide-react'; // Importei ícones para ficar profissional
+import { Shield, Landmark, Users, FileText } from 'lucide-react';
 
-// R S: Componente de seleção limpo (sem nomes de terceiros)
+// R S: Componente de seleção limpo
 const SelecaoPortalRoot = () => {
   const navigate = useNavigate();
   
@@ -63,25 +63,29 @@ const AppRoutes = () => {
     return (
       <div className="min-h-[60vh] w-full flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-r-transparent"></div>
-        <span className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">sincronizando sistema</span>
+        <span className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 italic">sincronizando sistema r s</span>
       </div>
     );
   }
 
+  // R S: Centralização de Redirecionamento
   const getRedirectPath = () => {
+    // Prioridade total para troca de senha
     if (userData?.deve_trocar_senha) return "/trocar-senha";
     if (role === 'root') return "/root/selecao";
-    return `/${role}/dashboard`;
+    return role ? `/${role}/dashboard` : "/";
   };
 
   return (
     <Routes>
+      {/* Rotas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/cursos" element={<Cursos />} />
       <Route path="/noticias" element={<Noticias />} /> 
       <Route path="/sobre" element={<SobreNos />} /> 
       <Route path="/noticia/:id" element={<NoticiaDetalhes />} /> 
 
+      {/* Autenticação */}
       <Route 
         path="/login-aluno" 
         element={user && role ? <Navigate to={getRedirectPath()} replace /> : <Login />} 
@@ -90,14 +94,24 @@ const AppRoutes = () => {
         path="/login-professor" 
         element={user && role ? <Navigate to={getRedirectPath()} replace /> : <Login />} 
       />
-
+      
+      {/* R S: Rota de Troca de Senha com proteção básica */}
       <Route path="/trocar-senha" element={user ? <TrocarSenha /> : <Navigate to="/" />} />
       
+      {/* R S: BLOQUEIO GLOBAL DE SEGURANÇA 
+          Se o usuário está logado e precisa trocar a senha, ele não acessa nada abaixo.
+      */}
+      {user && userData?.deve_trocar_senha && location.pathname !== "/trocar-senha" && (
+        <Route path="*" element={<Navigate to="/trocar-senha" replace />} />
+      )}
+
+      {/* Seleção Root */}
       <Route 
         path="/root/selecao" 
         element={role === 'root' ? <SelecaoPortalRoot /> : <Navigate to="/" />} 
       />
 
+      {/* Rotas Privadas R S */}
       {user && (
         <>
           <Route 
@@ -112,7 +126,7 @@ const AppRoutes = () => {
           <Route 
             path="/funcionario/dashboard" 
             element={
-              <PrivateRoute roleRequired={role === 'root' ? 'root' : 'funcionario'}>
+              <PrivateRoute roleRequired="funcionario">
                 <DashboardSecretaria />
               </PrivateRoute>
             } 
@@ -130,7 +144,7 @@ const AppRoutes = () => {
           <Route 
             path="/aluno/dashboard" 
             element={
-              <PrivateRoute roleRequired={role === 'root' ? 'root' : 'aluno'}>
+              <PrivateRoute roleRequired="aluno">
                 <div className="p-20 text-center font-black uppercase italic text-slate-800">painel do aluno</div>
               </PrivateRoute>
             } 
@@ -138,6 +152,7 @@ const AppRoutes = () => {
         </>
       )}
 
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

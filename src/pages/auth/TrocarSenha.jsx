@@ -1,26 +1,34 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Lock, ShieldCheck, Eye, EyeOff, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
-import { toast } from 'react-hot-toast'; // r s: importação do toast
+import { toast } from 'react-hot-toast';
 
 export default function TrocarSenha() {
   const [senha, setSenha] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [verSenha, setVerSenha] = useState(false);
-  const [verConfirmar, setVerConfirmar] = useState(false); // r s: novo estado para o olho da contra-senha
+  const [verConfirmar, setVerConfirmar] = useState(false);
   const { atualizarSenhaPrimeiroAcesso, userData } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  // Regras r s
   const temMaiuscula = /[A-Z]/.test(senha);
   const temEspecial = /[!@#$%^&*(),.?":{}|<>]/.test(senha);
   const temTamanhoMin = senha.length >= 6;
+
+  // r s: Se o usuário entrar aqui e já tiver trocado, manda pro dash
+  useEffect(() => {
+    if (userData && userData.deve_trocar_senha === false) {
+      navigate('/dashboard');
+    }
+  }, [userData, navigate]);
 
   const handleTroca = async (e) => {
     e.preventDefault();
     
     if (!temTamanhoMin || !temMaiuscula || !temEspecial) {
-      toast.error("a senha não atende aos requisitos de segurança r s");
+      toast.error("a senha não atende aos requisitos r s");
       return;
     }
 
@@ -30,13 +38,15 @@ export default function TrocarSenha() {
     }
 
     try {
-      const senhaPadronizada = senha.toLowerCase();
-      await atualizarSenhaPrimeiroAcesso(senhaPadronizada);
-      toast.success("senha atualizada com sucesso! r s");
-      navigate('/'); 
+      // r s: enviamos a senha para o context que cuidará do Auth e do Firestore
+      await atualizarSenhaPrimeiroAcesso(senha); 
+      toast.success("senha atualizada! acesso liberado r s");
+      
+      // r s: após o sucesso, redireciona para o dashboard
+      navigate('/dashboard'); 
     } catch (error) {
       console.error(error);
-      toast.error("erro ao atualizar. faça login novamente r s.");
+      toast.error("erro ao atualizar. tente novamente r s.");
     }
   };
 
@@ -48,29 +58,28 @@ export default function TrocarSenha() {
   );
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-slate-50">
-      <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 border border-slate-100">
+    <div className="fixed inset-0 z-[9999] bg-[#0f172a] flex items-center justify-center px-4 overflow-y-auto">
+      <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 border border-slate-100 my-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-cept-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck className="text-cept-blue" size={32} />
+          <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <ShieldCheck className="text-blue-600" size={40} />
           </div>
           <h2 className="text-2xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-            primeiro acesso ao C.E.P.T
+            comando r s: troca obrigatória
           </h2>
-          <p className="text-sm text-slate-400 font-bold lowercase mt-2 leading-tight">
-            olá {userData?.nome || 'usuário'}, por segurança, altere sua senha inicial para continuar.
+          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-4 leading-tight">
+            olá {userData?.nome || 'operador'}, defina sua credencial definitiva.
           </p>
         </div>
 
-        <form onSubmit={handleTroca} className="space-y-4">
-          {/* Campo Nova Senha */}
+        <form onSubmit={handleTroca} className="space-y-5">
           <div className="space-y-3">
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input
                 type={verSenha ? "text" : "password"}
                 placeholder="nova senha"
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all font-bold text-sm shadow-inner"
+                className="w-full pl-14 pr-12 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 transition-all font-bold text-sm"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
@@ -78,26 +87,25 @@ export default function TrocarSenha() {
               <button 
                 type="button" 
                 onClick={() => setVerSenha(!verSenha)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cept-blue transition-colors"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-600"
               >
-                {verSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                {verSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
-              <BadgeValidacao condicao={temTamanhoMin} texto="6+ caracteres" />
+              <BadgeValidacao condicao={temTamanhoMin} texto="6+ digitos" />
               <BadgeValidacao condicao={temMaiuscula} texto="1 maiúscula" />
               <BadgeValidacao condicao={temEspecial} texto="1 especial" />
             </div>
           </div>
 
-          {/* Campo Confirmar Senha com Olho r s */}
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input
               type={verConfirmar ? "text" : "password"}
               placeholder="confirmar nova senha"
-              className="w-full pl-12 pr-12 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-cept-blue transition-all font-bold text-sm shadow-inner"
+              className="w-full pl-14 pr-12 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 transition-all font-bold text-sm"
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               required
@@ -105,17 +113,17 @@ export default function TrocarSenha() {
             <button 
               type="button" 
               onClick={() => setVerConfirmar(!verConfirmar)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cept-blue transition-colors"
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-600"
             >
-              {verConfirmar ? <EyeOff size={18} /> : <Eye size={18} />}
+              {verConfirmar ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-cept-blue hover:bg-slate-800 text-white font-black py-4 rounded-2xl transition-all uppercase italic tracking-widest text-sm shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 group mt-2"
+            className="w-full bg-[#0f172a] hover:bg-blue-600 text-white font-black py-5 rounded-2xl transition-all uppercase italic tracking-[0.2em] text-[11px] shadow-xl flex items-center justify-center gap-3 group active:scale-95"
           >
-            atualizar e acessar <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            validar e entrar <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
           </button>
         </form>
       </div>

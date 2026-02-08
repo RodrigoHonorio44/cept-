@@ -113,7 +113,7 @@ export default function FormSolicitacaoSecretaria({ isOpen, onClose }) {
             disabled={loading} 
             className="w-full bg-slate-900 text-white font-black py-5 rounded-3xl hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 uppercase tracking-tighter mt-4"
           >
-            {loading ? "A processar..." : <><Send size={20} /> Enviar para Validação Root</>}
+            {loading ? "A processar..." : <><Send size={20} /> Enviar Solicitacão de Acesso</>}
           </button>
         </form>
       </div>

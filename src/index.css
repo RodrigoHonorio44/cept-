@@ -14,18 +14,26 @@
 }
 
 @layer base {
-  /* r s fix: LIBERANDO o scroll para a página fluir */
+  /* r s fix: Scroll livre por padrão para o site institucional */
   html, body {
-    /* removemos o h-screen e o overflow-hidden */
     min-height: 100%;
-    overflow-x: hidden; /* evita scroll lateral */
-    overflow-y: auto;   /* permite scroll vertical */
+    overflow-x: hidden;
+    overflow-y: auto; 
     margin: 0;
     padding: 0;
+    scroll-behavior: smooth;
+  }
+
+  /* r s: Classe Crítica para o Dashboard. 
+     Aplicada via JS ou através da classe de utilitário abaixo */
+  body.dashboard-open {
+    overflow: hidden !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    position: fixed !important;
   }
 
   #root {
-    /* garante que o react ocupe a altura toda sem travar */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -39,26 +47,73 @@
     @apply tracking-tight;
   }
 
-  /* r s: scrollbar minimalista para não poluir o visual do cept */
+  /* r s: scrollbar global minimalista */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-full border-2 border-solid border-transparent bg-clip-padding;
+    @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-cept-blue;
+  /* r s: Scrollbar interna para áreas de dashboard */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full hover:bg-slate-400;
+  }
+
+  .input-lowercase {
+    @apply lowercase placeholder:normal-case;
   }
 }
 
 @layer components {
   .container-cept {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .stat-card-rs {
+    @apply bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between transition-all hover:shadow-md;
+  }
+}
+
+/* r s: COMANDO CENTRAL 2026 
+   Utilitário de travamento absoluto para o Dashboard.
+   Força o container a ignorar o scroll do body.
+*/
+.layout-dashboard-rs {
+  height: 100vh !important;
+  width: 100vw !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  display: flex !important;
+  background-color: #F8FAFC;
+}
+
+/* r s: Garantia para tablets e dispositivos móveis não "puxarem" a tela */
+@media (max-width: 1024px) {
+  .layout-dashboard-rs {
+    position: fixed;
+    touch-action: none; /* impede o pull-to-refresh em alguns browsers */
+  }
+  
+  /* permite scroll apenas na área de conteúdo do dashboard */
+  .layout-dashboard-rs main section {
+    touch-action: pan-y;
   }
 }
