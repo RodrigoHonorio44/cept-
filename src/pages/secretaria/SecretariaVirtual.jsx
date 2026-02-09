@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
-import { Send, Bell, FileText, Clock, Printer } from 'lucide-react'; // Adicionado Printer
+import { Send, Bell, FileText, Clock, Printer, MapPin } from 'lucide-react'; 
 import { toast } from 'react-hot-toast'; 
 
 // R S: Importando o gerador para o aluno imprimir em casa
@@ -19,18 +19,15 @@ export default function SecretariaVirtual() {
   // R S: Estado para o documento que será impresso pelo aluno
   const [documentoAtivo, setDocumentoAtivo] = useState(null);
 
-  // 1. Carregar Pedidos e Recados (Padrão R S)
   useEffect(() => {
     if (!user?.uid) return;
 
-    // Pedidos do usuário logado r s
     const qPedidos = query(
       collection(db, "solicitacoes_secretaria"),
       where("uid", "==", user.uid),
       orderBy("data_pedido", "desc")
     );
 
-    // Recados gerais da escola r s
     const qRecados = query(
       collection(db, "comunicados_secretaria"),
       orderBy("data", "desc")
@@ -61,14 +58,13 @@ export default function SecretariaVirtual() {
     try {
       await addDoc(collection(db, "solicitacoes_secretaria"), {
         uid: user.uid,
-        // R S: Garantindo lowercase total na persistência
         aluno_nome: (userData?.nome || user.displayName || "sem nome").toLowerCase(),
         aluno_matricula: String(userData?.matricula || "n/a").toLowerCase(),
         tipo_servico: tipo.toLowerCase(),
         mensagem: texto.toLowerCase(),
         status: "pendente",
         data_pedido: serverTimestamp(),
-        visualizacao_aluno: false // Inicia bloqueado para impressão r s
+        visualizacao_aluno: false 
       });
 
       toast.success("requerimento enviado com sucesso r s!");
@@ -81,7 +77,7 @@ export default function SecretariaVirtual() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 md:p-12">
+    <div className="min-h-screen bg-[#f8fafc] p-6 md:p-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-10">
         
         <header>
@@ -95,7 +91,6 @@ export default function SecretariaVirtual() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           
-          {/* COLUNA ESQUERDA: FORMULÁRIO r s */}
           <div className="space-y-6">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
               <h3 className="font-black uppercase italic mb-6 text-slate-800 flex items-center gap-2 text-sm">
@@ -125,9 +120,7 @@ export default function SecretariaVirtual() {
             </div>
           </div>
 
-          {/* COLUNA DIREITA: RECADOS E STATUS r s */}
           <div className="lg:col-span-2 space-y-8">
-            
             <section>
               <h3 className="font-black uppercase italic text-slate-400 text-[10px] mb-4 tracking-widest flex items-center gap-2">
                 <Bell size={16} /> comunicados da secretaria
@@ -157,39 +150,54 @@ export default function SecretariaVirtual() {
               </h3>
               <div className="space-y-4">
                 {pedidos.length > 0 ? pedidos.map(sol => (
-                  <div key={sol.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-slate-100 p-3 rounded-xl text-slate-400 group-hover:text-green-600 group-hover:bg-green-50 transition-colors">
-                        <FileText size={20} />
+                  <div key={sol.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex flex-col gap-4 group hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-slate-100 p-3 rounded-xl text-slate-400 group-hover:text-green-600 group-hover:bg-green-50 transition-colors">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-slate-800 uppercase text-[11px] italic leading-none">{sol.tipo_servico}</h4>
+                          <p className="text-[10px] text-slate-400 font-bold mt-1">
+                            enviado em {sol.data_pedido?.toDate ? sol.data_pedido.toDate().toLocaleDateString() : 'processando...'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-black text-slate-800 uppercase text-[11px] italic leading-none">{sol.tipo_servico}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold mt-1">
-                          enviado em {sol.data_pedido?.toDate ? sol.data_pedido.toDate().toLocaleDateString() : 'processando...'}
-                        </p>
+
+                      <div className="flex items-center gap-3">
+                        {/* BOTÃO IMPRIMIR: APENAS SE NÃO FOR ENTREGA PRESENCIAL R S */}
+                        {sol.status === 'concluido' && sol.visualizacao_aluno && !sol.entrega_presencial && (
+                          <button 
+                            onClick={() => setDocumentoAtivo({
+                              aluno: { nome: sol.aluno_nome, matricula: sol.aluno_matricula },
+                              tipo: sol.tipo_servico.includes('frequência') ? 'Frequência' : 'Matrícula'
+                            })}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+                          >
+                            <Printer size={14} /> Imprimir
+                          </button>
+                        )}
+
+                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
+                          sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                        }`}>
+                          {sol.status === 'pendente' ? 'em análise' : 'concluído'}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      {/* R S: Botão de imprimir que só aparece após liberação da secretaria */}
-                      {sol.status === 'concluido' && sol.visualizacao_aluno && (
-                        <button 
-                          onClick={() => setDocumentoAtivo({
-                            aluno: { nome: sol.aluno_nome, matricula: sol.aluno_matricula },
-                            tipo: sol.tipo_servico.includes('frequência') ? 'Frequência' : 'Matrícula'
-                          })}
-                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-                        >
-                          <Printer size={14} /> Imprimir
-                        </button>
-                      )}
-
-                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                        sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
-                      }`}>
-                        {sol.status === 'pendente' ? 'em análise' : 'concluído'}
-                      </span>
-                    </div>
+                    {/* R S: ALERTA DE RETIRADA FÍSICA PARA HISTÓRICO */}
+                    {sol.status === 'concluido' && sol.entrega_presencial && (
+                      <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2 duration-500">
+                        <div className="bg-orange-500 p-2.5 rounded-xl text-white">
+                          <MapPin size={18} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Retirada Disponível</p>
+                          <p className="text-[11px] font-bold text-slate-700 lowercase italic">{sol.resposta_secretaria}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )) : (
                     <div className="p-10 text-center text-slate-300 text-[10px] font-black uppercase italic">
@@ -198,12 +206,10 @@ export default function SecretariaVirtual() {
                 )}
               </div>
             </section>
-
           </div>
         </div>
       </div>
 
-      {/* R S: Renderiza o gerador de documento quando o aluno clica em imprimir */}
       {documentoAtivo && (
         <GeradorDocumento 
           aluno={documentoAtivo.aluno} 

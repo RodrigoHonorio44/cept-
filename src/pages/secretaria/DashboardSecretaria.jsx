@@ -12,6 +12,9 @@ import FormCadastroAluno from '../secretaria/forms/formCadastroAluno';
 import GeradorDocumento from './servicos/GeradorDocumento'; 
 import PainelDocumentos from './servicos/PainelDocumentos'; 
 
+// R S: NOVO MODAL PARA RETIRADA FÍSICA
+import ModalHistorico from './modals/ModalHistorico';
+
 import { 
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
@@ -28,6 +31,9 @@ export default function DashboardSecretaria() {
   const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
   const [documentoAtivo, setDocumentoAtivo] = useState(null); 
   const [pedidoParaResponder, setPedidoParaResponder] = useState(null);
+  
+  // R S: Estado para controlar o modal específico de histórico
+  const [isModalHistoricoOpen, setIsModalHistoricoOpen] = useState(false);
 
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
@@ -121,7 +127,6 @@ export default function DashboardSecretaria() {
   return (
     <div className="fixed inset-0 bg-[#F8FAFC] font-sans antialiased text-slate-900 flex overflow-hidden z-[9999]">
       
-      {/* SIDEBAR COMPLETA */}
       <aside className={`${sidebarOpen ? "w-72" : "w-24"} bg-[#0f172a] flex flex-col transition-all duration-500 relative z-50 shrink-0 h-full`}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute -right-3 top-12 bg-white border border-slate-200 text-slate-400 p-1.5 rounded-full shadow-sm z-[60]">
           {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
@@ -175,7 +180,6 @@ export default function DashboardSecretaria() {
         </header>
 
         <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC] custom-scrollbar">
-          {/* Restante do conteúdo da Main permanece idêntico ao seu código anterior */}
           <div className="max-w-7xl mx-auto space-y-8 pb-20">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard title="aguardando" value={stats.pendentes} color="amber" icon={Clock} />
@@ -206,7 +210,19 @@ export default function DashboardSecretaria() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {dadosFiltrados.map((sol) => (
-                      <tr key={sol.id} className="group hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => setPedidoParaResponder(sol)}>
+                      <tr 
+                        key={sol.id} 
+                        className="group hover:bg-slate-50/50 transition-colors cursor-pointer" 
+                        onClick={() => {
+                          // R S: Lógica para abrir o modal correto baseado no tipo
+                          if(sol.role?.includes('histórico')) {
+                            setPedidoParaResponder(sol);
+                            setIsModalHistoricoOpen(true);
+                          } else {
+                            setPedidoParaResponder(sol);
+                          }
+                        }}
+                      >
                         <td className="px-8 py-6 lowercase">
                           <div className="flex flex-col">
                             <span className="font-black text-slate-700 text-xs">{sol.nome}</span>
@@ -235,8 +251,8 @@ export default function DashboardSecretaria() {
         </section>
       </main>
 
-      {/* MODAL DE RESPOSTA E LIBERAÇÃO R S */}
-      {pedidoParaResponder && (
+      {/* MODAL DE RESPOSTA E LIBERAÇÃO DIGITAL R S */}
+      {pedidoParaResponder && !isModalHistoricoOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
            <div className="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl relative">
               <button onClick={() => setPedidoParaResponder(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -269,6 +285,18 @@ export default function DashboardSecretaria() {
               </div>
            </div>
         </div>
+      )}
+
+      {/* R S: MODAL ESPECÍFICO PARA HISTÓRICO (RETIRADA FÍSICA) */}
+      {isModalHistoricoOpen && pedidoParaResponder && (
+        <ModalHistorico 
+          pedido={pedidoParaResponder} 
+          user={user}
+          onClose={() => {
+            setIsModalHistoricoOpen(false);
+            setPedidoParaResponder(null);
+          }} 
+        />
       )}
 
       {/* MODAIS DE APOIO */}
