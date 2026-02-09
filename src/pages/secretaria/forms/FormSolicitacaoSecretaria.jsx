@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../../services/firebase'; // Ajustado para a nova estrutura de pastas
+import { db } from '../../../services/firebase'; // Ajustado para a nova estrutura de pastas
 import { collection, addDoc } from 'firebase/firestore';
 import { Send, X, ClipboardList, UserCheck } from 'lucide-react';
 

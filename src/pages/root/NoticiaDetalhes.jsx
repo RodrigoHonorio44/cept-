@@ -115,9 +115,9 @@ export default function NoticiaDetalhes() {
         <footer className="mt-20 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4">
             {/* r s: Box do Logo com o arquivo correto logo_cept.png */}
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 p-2 shadow-sm">
+            <div className="w-30 h-30 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 p-2 shadow-sm">
               <img 
-                src="/logo_cept.png" 
+                src="/10.png" 
                 alt="Logo CEPT Itaipuaçu" 
                 className="w-full h-full object-contain"
                 onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=CEPT"; }}

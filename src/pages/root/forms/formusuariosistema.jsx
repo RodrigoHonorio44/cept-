@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // Usamos o db e o auth_admin que você já configurou r s
-import { db, auth_admin } from '../../services/firebase'; 
+import { db, auth_admin } from '../../../services/firebase'; 
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, writeBatch, serverTimestamp } from 'firebase/firestore'; 
 import { toast } from 'sonner'; 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // r s: necessário para navegar
 import { useAuth } from '../../hooks/useAuth'; 
 import { useDashboard } from '../../hooks/useDashboard'; 
-import FormUsuarioSistema from '../../components/forms/formusuariosistema'; 
+import FormUsuarioSistema from '../root/forms/formusuariosistema'; 
 import GerenciarNoticias from '../root/GerenciarNoticias'; 
 import { 
   Users, Activity, HardDrive, UserPlus, Search, 

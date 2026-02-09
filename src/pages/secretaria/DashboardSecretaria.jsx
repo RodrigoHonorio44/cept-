@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth'; 
 import { db } from '../../services/firebase';
 import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
-import FormSolicitacaoSecretaria from '../../components/forms/FormSolicitacaoSecretaria';
+import FormSolicitacaoSecretaria from '../secretaria/forms/FormSolicitacaoSecretaria';
+// ACRESCENTADO: Importação do novo formulário
+import FormCadastroAluno from '../secretaria/forms/formCadastroAluno'; 
+
 import { 
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
-  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home 
+  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home, X, Plus
 } from 'lucide-react';
 
 export default function DashboardSecretaria() {
@@ -15,6 +18,9 @@ export default function DashboardSecretaria() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // ACRESCENTADO: Estado para o novo modal de cadastro
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
+  
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
   const [busca, setBusca] = useState('');
@@ -57,7 +63,6 @@ export default function DashboardSecretaria() {
   );
 
   return (
-    /* r s: fixed inset-0 garante que o dashboard ocupe toda a tela, ignorando o header da home */
     <div className="fixed inset-0 bg-[#F8FAFC] font-sans antialiased text-slate-900 flex overflow-hidden z-[9999]">
       
       {/* SIDEBAR R S */}
@@ -103,25 +108,32 @@ export default function DashboardSecretaria() {
         </div>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL (Header de Dashboard Integrado) */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         
-        {/* r s: Este é o único header visível, o da Home foi isolado pelo container fixed */}
         <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-40">
           <div>
             <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">secretaria escolar</h2>
             <h1 className="text-xl font-black text-slate-800 tracking-tight italic uppercase">centro de operações</h1>
           </div>
 
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
-          >
-            <UserPlus size={18} /> {sidebarOpen && "Solicitar Acesso "}
-          </button>
+          {/* AREA DE BOTÕES: Mantido o original e acrescentado o novo */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-slate-100 text-slate-600 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-slate-200 transition-all active:scale-95"
+            >
+              <UserPlus size={18} /> {sidebarOpen && "Solicitar Acesso"}
+            </button>
+
+            <button 
+              onClick={() => setIsCadastroModalOpen(true)}
+              className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+            >
+              <Plus size={18} /> {sidebarOpen && "Cadastrar Aluno"}
+            </button>
+          </div>
         </header>
 
-        {/* ÁREA DE SCROLL */}
         <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC] custom-scrollbar">
           <div className="max-w-7xl mx-auto space-y-8 pb-20">
             
@@ -176,14 +188,14 @@ export default function DashboardSecretaria() {
                           {sol.dataSolicitacao?.seconds ? new Date(sol.dataSolicitacao.seconds * 1000).toLocaleDateString() : '08/02/2026'}
                         </td>
                         <td className="px-8 py-6 text-right">
-                           <div className="flex items-center justify-end gap-4">
-                             <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${
-                               sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
-                             }`}>
-                               {sol.status}
-                             </span>
-                             <ArrowRight size={14} className="text-slate-200 group-hover:text-blue-600 transition-all cursor-pointer" />
-                           </div>
+                            <div className="flex items-center justify-end gap-4">
+                              <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${
+                                sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                              }`}>
+                                {sol.status}
+                              </span>
+                              <ArrowRight size={14} className="text-slate-200 group-hover:text-blue-600 transition-all cursor-pointer" />
+                            </div>
                         </td>
                       </tr>
                     ))}
@@ -201,7 +213,24 @@ export default function DashboardSecretaria() {
         </section>
       </main>
 
+      {/* MODAL ORIGINAL 1 */}
       <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* ACRESCENTADO: MODAL PARA O NOVO formCadastroAluno */}
+      {isCadastroModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsCadastroModalOpen(false)}></div>
+          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
+            <button 
+              onClick={() => setIsCadastroModalOpen(false)}
+              className="absolute top-8 right-8 z-[110] bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all"
+            >
+              <X size={24} />
+            </button>
+            <FormCadastroAluno />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
