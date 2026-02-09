@@ -3,8 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
-import { Send, Bell, FileText, Clock } from 'lucide-react';
+import { Send, Bell, FileText, Clock, Printer } from 'lucide-react'; // Adicionado Printer
 import { toast } from 'react-hot-toast'; 
+
+// R S: Importando o gerador para o aluno imprimir em casa
+import GeradorDocumento from '../secretaria/servicos/GeradorDocumento';
 
 export default function SecretariaVirtual() {
   const { user, userData } = useAuth();
@@ -12,6 +15,9 @@ export default function SecretariaVirtual() {
   const [recados, set_recados] = useState([]);
   const [tipo, set_tipo] = useState('');
   const [texto, set_texto] = useState('');
+
+  // R S: Estado para o documento que será impresso pelo aluno
+  const [documentoAtivo, setDocumentoAtivo] = useState(null);
 
   // 1. Carregar Pedidos e Recados (Padrão R S)
   useEffect(() => {
@@ -61,7 +67,8 @@ export default function SecretariaVirtual() {
         tipo_servico: tipo.toLowerCase(),
         mensagem: texto.toLowerCase(),
         status: "pendente",
-        data_pedido: serverTimestamp()
+        data_pedido: serverTimestamp(),
+        visualizacao_aluno: false // Inicia bloqueado para impressão r s
       });
 
       toast.success("requerimento enviado com sucesso r s!");
@@ -162,11 +169,27 @@ export default function SecretariaVirtual() {
                         </p>
                       </div>
                     </div>
-                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                      sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
-                    }`}>
-                      {sol.status === 'pendente' ? 'em análise' : 'concluído'}
-                    </span>
+
+                    <div className="flex items-center gap-3">
+                      {/* R S: Botão de imprimir que só aparece após liberação da secretaria */}
+                      {sol.status === 'concluido' && sol.visualizacao_aluno && (
+                        <button 
+                          onClick={() => setDocumentoAtivo({
+                            aluno: { nome: sol.aluno_nome, matricula: sol.aluno_matricula },
+                            tipo: sol.tipo_servico.includes('frequência') ? 'Frequência' : 'Matrícula'
+                          })}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                        >
+                          <Printer size={14} /> Imprimir
+                        </button>
+                      )}
+
+                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
+                        sol.status === 'pendente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                      }`}>
+                        {sol.status === 'pendente' ? 'em análise' : 'concluído'}
+                      </span>
+                    </div>
                   </div>
                 )) : (
                     <div className="p-10 text-center text-slate-300 text-[10px] font-black uppercase italic">
@@ -179,6 +202,15 @@ export default function SecretariaVirtual() {
           </div>
         </div>
       </div>
+
+      {/* R S: Renderiza o gerador de documento quando o aluno clica em imprimir */}
+      {documentoAtivo && (
+        <GeradorDocumento 
+          aluno={documentoAtivo.aluno} 
+          tipoDoc={documentoAtivo.tipo} 
+          onClose={() => setDocumentoAtivo(null)} 
+        />
+      )}
     </div>
   );
 }
