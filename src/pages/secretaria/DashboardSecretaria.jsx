@@ -3,24 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth'; 
 import { db } from '../../services/firebase';
 import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
+
+// COMPONENTES DE FORMULÁRIO
 import FormSolicitacaoSecretaria from '../secretaria/forms/FormSolicitacaoSecretaria';
-// ACRESCENTADO: Importação do novo formulário
 import FormCadastroAluno from '../secretaria/forms/formCadastroAluno'; 
+
+// SERVIÇOS RS
+import GeradorDocumento from './servicos/GeradorDocumento'; 
+import PainelDocumentos from './servicos/PainelDocumentos'; // Certifique-se de que o nome do arquivo está correto
 
 import { 
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
-  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home, X, Plus
+  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home, X, Plus, FileText
 } from 'lucide-react';
 
 export default function DashboardSecretaria() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // ACRESCENTADO: Estado para o novo modal de cadastro
-  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
   
+  // ESTADOS DOS MODAIS
+  const [isModalOpen, setIsModalOpen] = useState(false); // FormSolicitacao (Usuário Sistema)
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
+  const [documentoAtivo, setDocumentoAtivo] = useState(null); 
+
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
   const [busca, setBusca] = useState('');
@@ -81,33 +88,43 @@ export default function DashboardSecretaria() {
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
-          <NavButton icon={LayoutDashboard} label="dashboard" active sidebarOpen={sidebarOpen} onClick={() => {}} />
-          <NavButton icon={ShieldCheck} label="aprovações" sidebarOpen={sidebarOpen} onClick={() => {}} />
-          <NavButton icon={Settings} label="configurações" sidebarOpen={sidebarOpen} onClick={() => {}} />
+          
+          <div className="mb-6">
+             <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
+             {/* Aprovações agora foca na tabela de movimentos */}
+             <NavButton icon={ShieldCheck} label="Aprovações" sidebarOpen={sidebarOpen} onClick={() => {
+                document.getElementById('tabela-movimentacoes')?.scrollIntoView({ behavior: 'smooth' });
+             }} />
+          </div>
+
+          <div className="mb-6">
+            <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Cadastros R S</p>
+            <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
+            {/* Usuário Sistema abre o formulário de solicitações */}
+            <NavButton icon={Settings} label="Usuário Sistema" sidebarOpen={sidebarOpen} onClick={() => setIsModalOpen(true)} />
+          </div>
+
+          <div className="mb-6">
+            <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Serviços Digitais</p>
+            <NavButton icon={ClipboardList} label="Declarações/QR" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Matrícula' })} />
+            <NavButton icon={FileText} label="Frequência" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Frequência' })} />
+            <NavButton icon={Plus} label="Atestados" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Atestado' })} />
+          </div>
           
           <div className="pt-4 mt-4 border-t border-white/5">
-            <NavButton 
-              icon={Home} label="ver site" 
-              sidebarOpen={sidebarOpen} 
-              onClick={() => navigate('/')} 
-            />
+            <NavButton icon={Home} label="ver site" sidebarOpen={sidebarOpen} onClick={() => navigate('/')} />
           </div>
         </nav>
 
         <div className="p-4 border-t border-white/5 bg-black/10 shrink-0">
-          <button 
-            onClick={lidar_com_logout}
-            className={`flex items-center gap-4 w-full p-4 text-red-400 rounded-2xl hover:bg-red-500/10 transition-all font-black text-[10px] uppercase tracking-widest ${!sidebarOpen && "justify-center"}`}
-          >
+          <button onClick={lidar_com_logout} className={`flex items-center gap-4 w-full p-4 text-red-400 rounded-2xl hover:bg-red-500/10 transition-all font-black text-[10px] uppercase tracking-widest ${!sidebarOpen && "justify-center"}`}>
             <LogOut size={22} />
             {sidebarOpen && <span>deslogar</span>}
           </button>
-          <p className={`text-[8px] font-black text-slate-600 uppercase mt-4 text-center ${!sidebarOpen && 'hidden'}`}>
-             2026 system
-          </p>
         </div>
       </aside>
 
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         
         <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-40">
@@ -116,34 +133,29 @@ export default function DashboardSecretaria() {
             <h1 className="text-xl font-black text-slate-800 tracking-tight italic uppercase">centro de operações</h1>
           </div>
 
-          {/* AREA DE BOTÕES: Mantido o original e acrescentado o novo */}
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="bg-slate-100 text-slate-600 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-slate-200 transition-all active:scale-95"
-            >
-              <UserPlus size={18} /> {sidebarOpen && "Solicitar Acesso"}
-            </button>
-
-            <button 
-              onClick={() => setIsCadastroModalOpen(true)}
-              className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
-            >
-              <Plus size={18} /> {sidebarOpen && "Cadastrar Aluno"}
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsCadastroModalOpen(true)}
+            className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+          >
+            <Plus size={18} /> {sidebarOpen && "Cadastrar Aluno"}
+          </button>
         </header>
 
         <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC] custom-scrollbar">
           <div className="max-w-7xl mx-auto space-y-8 pb-20">
             
+            {/* CARDS DE STATS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard title="aguardando" value={stats.pendentes} color="amber" icon={Clock} />
               <StatCard title="aprovados" value={stats.aprovados} color="emerald" icon={CheckCircle} />
               <StatCard title="ativos" value="--" color="blue" icon={Users} />
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+            {/* PAINEL DE SERVIÇOS R S (ONDE VOCÊ ACESSA AS DECLARAÇÕES) */}
+            <PainelDocumentos onOpenDoc={(doc) => setDocumentoAtivo(doc)} />
+
+            {/* TABELA DE MOVIMENTAÇÕES */}
+            <div id="tabela-movimentacoes" className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="bg-slate-900 p-2 rounded-xl text-white">
@@ -177,10 +189,10 @@ export default function DashboardSecretaria() {
                   <tbody className="divide-y divide-slate-50">
                     {dadosFiltrados.map((sol) => (
                       <tr key={sol.id} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 lowercase">
                           <div className="flex flex-col">
-                            <span className="font-black text-slate-700 text-xs lowercase">{sol.nome}</span>
-                            <span className="text-[10px] text-slate-400 lowercase">{sol.email}</span>
+                            <span className="font-black text-slate-700 text-xs">{sol.nome}</span>
+                            <span className="text-[10px] text-slate-400">{sol.email}</span>
                           </div>
                         </td>
                         <td className="px-8 py-6 uppercase text-[9px] font-black text-slate-500">{sol.role}</td>
@@ -205,25 +217,23 @@ export default function DashboardSecretaria() {
             </div>
 
             <footer className="pt-10 border-t border-slate-100 text-center">
-              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">
-                cept  — comando central 2026
-              </p>
+              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">cept — comando central 2026</p>
             </footer>
           </div>
         </section>
       </main>
 
-      {/* MODAL ORIGINAL 1 */}
+      {/* MODAL: USUÁRIO SISTEMA (Formulário de Solicitação) */}
       <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-      {/* ACRESCENTADO: MODAL PARA O NOVO formCadastroAluno */}
+      {/* MODAL: CADASTRO ALUNO */}
       {isCadastroModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsCadastroModalOpen(false)}></div>
           <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
             <button 
               onClick={() => setIsCadastroModalOpen(false)}
-              className="absolute top-8 right-8 z-[110] bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-all"
+              className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white"
             >
               <X size={24} />
             </button>
@@ -231,10 +241,20 @@ export default function DashboardSecretaria() {
           </div>
         </div>
       )}
+
+      {/* MODAL: DOCUMENTO COM QR CODE */}
+      {documentoAtivo && (
+        <GeradorDocumento 
+          aluno={documentoAtivo.aluno} 
+          tipoDoc={documentoAtivo.tipo} 
+          onClose={() => setDocumentoAtivo(null)} 
+        />
+      )}
     </div>
   );
 }
 
+// Subcomponentes NavButton e StatCard permanecem os mesmos...
 function NavButton({ icon: Icon, label, active, sidebarOpen, onClick }) {
   return (
     <button 
@@ -249,11 +269,7 @@ function NavButton({ icon: Icon, label, active, sidebarOpen, onClick }) {
 }
 
 function StatCard({ title, value, color, icon: Icon }) {
-  const colors = {
-    amber: "bg-orange-500",
-    emerald: "bg-emerald-500",
-    blue: "bg-blue-600",
-  };
+  const colors = { amber: "bg-orange-500", emerald: "bg-emerald-500", blue: "bg-blue-600" };
   return (
     <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm transition-transform hover:scale-[1.02]">
       <div className="flex justify-between items-center mb-6">
