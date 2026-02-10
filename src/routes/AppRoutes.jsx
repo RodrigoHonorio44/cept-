@@ -8,21 +8,24 @@ import NoticiaDetalhes from '../pages/root/NoticiaDetalhes';
 import Login from '../pages/auth/Login'; 
 import DashboardRoot from '../pages/root/Dashboard'; 
 import DashboardSecretaria from '../pages/secretaria/DashboardSecretaria'; 
+import DashboardProfessor from '../pages/secretaria/professores/DashboardProfessor'; 
+import DashboardAluno from '../pages/secretaria/Alunos/DashboardAluno'; // R S: Importando a Dashboard Real
 import SecretariaVirtual from '../pages/secretaria/SecretariaVirtual'; 
 import TrocarSenha from '../pages/auth/TrocarSenha'; 
 import PrivateRoute from './PrivateRoute';
 import { useAuth } from '../hooks/useAuth';
-import { Shield, Landmark, Users, FileText } from 'lucide-react';
+import { Shield, Landmark, Users, GraduationCap, FileText } from 'lucide-react';
 
-// R S: Componente de seleção limpo
+// R S: Componente de seleção ROOT com distinção de Secretarias
 const SelecaoPortalRoot = () => {
   const navigate = useNavigate();
   
   const botoes = [
     { label: "painel administrativo", rota: "/root/dashboard", icon: <Shield size={20} />, bg: "bg-blue-600" },
     { label: "gestão de secretaria", rota: "/funcionario/dashboard", icon: <Landmark size={20} />, bg: "bg-slate-800" },
-    { label: "área do aluno", rota: "/aluno/dashboard", icon: <Users size={20} />, bg: "bg-slate-800" },
-    { label: "secretaria virtual", rota: "/secretaria", icon: <FileText size={20} />, bg: "bg-slate-800" },
+    { label: "portal do professor", rota: "/professor/dashboard", icon: <GraduationCap size={20} />, bg: "bg-green-600" },
+    { label: "secretaria virtual", rota: "/secretaria", icon: <FileText size={20} />, bg: "bg-emerald-500" }, 
+    { label: "área do aluno", rota: "/aluno/dashboard", icon: <Users size={20} />, bg: "bg-slate-700" },
   ];
 
   return (
@@ -30,7 +33,7 @@ const SelecaoPortalRoot = () => {
       <h1 className="font-black text-3xl mb-2 italic uppercase tracking-tighter">
         Portal de <span className="text-blue-500">Gestão</span>
       </h1>
-      <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em] mb-10">acesso de administrador global</p>
+      <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em] mb-10">acesso de administrador global r s</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
         {botoes.map((btn) => (
@@ -68,11 +71,20 @@ const AppRoutes = () => {
     );
   }
 
-  // R S: Centralização de Redirecionamento
+  // R S: Lógica de redirecionamento inteligente
   const getRedirectPath = () => {
-    // Prioridade total para troca de senha
     if (userData?.deve_trocar_senha) return "/trocar-senha";
     if (role === 'root') return "/root/selecao";
+    
+    // R S: Adicionado redirecionamento direto para aluno
+    if (role === 'aluno') return "/aluno/dashboard";
+
+    if (role === 'funcionario') {
+      const cargo = userData?.cargo?.toLowerCase();
+      if (cargo === 'professor' || cargo === 'professora') return "/professor/dashboard";
+      return "/funcionario/dashboard";
+    }
+
     return role ? `/${role}/dashboard` : "/";
   };
 
@@ -95,12 +107,8 @@ const AppRoutes = () => {
         element={user && role ? <Navigate to={getRedirectPath()} replace /> : <Login />} 
       />
       
-      {/* R S: Rota de Troca de Senha com proteção básica */}
       <Route path="/trocar-senha" element={user ? <TrocarSenha /> : <Navigate to="/" />} />
       
-      {/* R S: BLOQUEIO GLOBAL DE SEGURANÇA 
-          Se o usuário está logado e precisa trocar a senha, ele não acessa nada abaixo.
-      */}
       {user && userData?.deve_trocar_senha && location.pathname !== "/trocar-senha" && (
         <Route path="*" element={<Navigate to="/trocar-senha" replace />} />
       )}
@@ -114,45 +122,42 @@ const AppRoutes = () => {
       {/* Rotas Privadas R S */}
       {user && (
         <>
+          {/* Painel Administrativo Geral */}
           <Route 
             path="/root/dashboard" 
-            element={
-              <PrivateRoute roleRequired="root">
-                <DashboardRoot />
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute roleRequired="root"><DashboardRoot /></PrivateRoute>} 
           />
 
+          {/* Gestão de Secretaria (Dashboard Interna) */}
           <Route 
             path="/funcionario/dashboard" 
-            element={
-              <PrivateRoute roleRequired="funcionario">
-                <DashboardSecretaria />
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute roleRequired="funcionario"><DashboardSecretaria /></PrivateRoute>} 
           />
 
+          {/* Portal Docente */}
+          <Route 
+            path="/professor/dashboard" 
+            element={<PrivateRoute><DashboardProfessor /></PrivateRoute>} 
+          />
+
+          {/* Secretaria Virtual */}
           <Route 
             path="/secretaria" 
-            element={
-              <PrivateRoute> 
-                <SecretariaVirtual />
-              </PrivateRoute>
-            } 
+            element={<PrivateRoute><SecretariaVirtual /></PrivateRoute>} 
           />
 
+          {/* Área do Aluno - Agora renderizando a dashboard real r s */}
           <Route 
             path="/aluno/dashboard" 
             element={
               <PrivateRoute roleRequired="aluno">
-                <div className="p-20 text-center font-black uppercase italic text-slate-800">painel do aluno</div>
+                <DashboardAluno />
               </PrivateRoute>
             } 
           />
         </>
       )}
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

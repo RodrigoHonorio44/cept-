@@ -40,9 +40,8 @@ export default function Home() {
     data: new Date().toLocaleDateString('pt-br')
   }];
 
-  // R S: Lógica de portal inteligente - Resolvendo redirecionamento da Secretaria
+  // R S: Lógica de portal inteligente atualizada para incluir DashboardProfessor
   const handlePortalClick = (type) => {
-    // 1. Se não estiver logado, manda para o login específico
     if (!user) {
       navigate(type === 'aluno' ? '/login-aluno' : '/login-professor');
       return;
@@ -51,41 +50,47 @@ export default function Home() {
     const r = role?.toLowerCase();
     const cargo = userData?.cargo?.toLowerCase();
 
-    // 2. Lógica para ROOT (Passe livre) r s
+    // 1. Lógica para ROOT (Acesso Total) r s
     if (r === 'root') {
       navigate('/root/selecao');
       return;
     }
 
-    // 3. Portal do Aluno
+    // 2. Portal do Aluno/Pai
     if (type === 'aluno') {
       if (r === 'aluno' || r === 'pai') navigate('/aluno/dashboard');
       else navigate('/login-aluno');
       return;
     }
 
-    // 4. Lógica para Funcionários e Secretaria Virtual r s
+    // 3. Lógica para Funcionários (Professor vs Secretaria) r s
     if (type === 'professor' || type === 'secretaria') {
       
-      // Se for Administrativo (Tati), vai sempre para o Dashboard de Gestão
-      if (r === 'funcionario' && (cargo === 'administrativo' || cargo === 'diretora')) {
+      // Se clicar em Professor e for de fato Professor(a)
+      if (type === 'professor' && r === 'funcionario' && (cargo === 'professor' || cargo === 'professora')) {
+        navigate('/professor/dashboard');
+        return;
+      }
+
+      // Se clicar em Secretaria e for Administrativo/Direção
+      if (type === 'secretaria' && r === 'funcionario' && (cargo === 'administrativo' || cargo === 'diretora')) {
         navigate('/funcionario/dashboard');
         return;
       }
 
-      // Se for Aluno ou Pai clicando em "Secretaria Virtual", vai para a página de serviços
+      // Se for Aluno/Pai querendo a Secretaria Virtual
       if (type === 'secretaria' && (r === 'aluno' || r === 'pai')) {
         navigate('/secretaria');
         return;
       }
 
-      // Se for Professor r s
+      // Fallback: Se o funcionário clicar no portal "errado", redireciona para o dele por padrão r s
       if (r === 'funcionario') {
-        navigate('/funcionario/dashboard');
+        if (cargo === 'professor' || cargo === 'professora') navigate('/professor/dashboard');
+        else navigate('/funcionario/dashboard');
         return;
       }
 
-      // Fallback
       navigate('/login-professor');
     }
   };
@@ -149,19 +154,19 @@ export default function Home() {
           onClick={() => handlePortalClick('aluno')} 
           titulo="Portal do Aluno" 
           cor="bg-[#0f172a]" 
-          desc="acesse suas notas, boletim, frequências e conteúdos digitais de forma rápida r s." 
+          desc="acesse suas notas, boletim, frequências e conteúdos digitais de forma rápida ." 
         />
         <CardAcesso 
           onClick={() => handlePortalClick('professor')} 
           titulo="Portal do Professor" 
           cor="bg-[#1e293b]" 
-          desc="gerenciamento de turmas, diário de classe, planejamento e acompanhamento pedagógico r s." 
+          desc="gerenciamento de turmas, diário de classe, planejamento e acompanhamento pedagógico ." 
         />
         <CardAcesso 
           onClick={() => handlePortalClick('secretaria')} 
           titulo="Secretaria Virtual" 
           cor="bg-[#22c55e]" 
-          desc="solicitação de documentos, matrículas e suporte administrativo totalmente online r s." 
+          desc="solicitação de documentos, matrículas e suporte administrativo totalmente online ." 
         />
       </div>
 
@@ -208,7 +213,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Estrutura r s */}
+      {/* Restante do componente (Vídeo e Trilíngue) permanece inalterado r s */}
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="relative group flex justify-center">
@@ -245,7 +250,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Ensino Trilíngue r s */}
       <section className="max-w-7xl mx-auto px-6 py-40 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
         <div className="relative">
           <h3 className="text-5xl md:text-6xl font-black text-slate-900 mb-10 leading-[1] tracking-tighter uppercase italic">
