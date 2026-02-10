@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Calendar, Clock, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import { db } from '../../../services/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
@@ -20,16 +20,20 @@ export default function ModalHistorico({ pedido, onClose, user }) {
     try {
       const pedidoRef = doc(db, "solicitacoes_secretaria", pedido.id);
       
-      // R S: Mensagem padronizada em lowercase para persistência
+      // R S: Pegando nome do root ou atendente e forçando lowercase
+      const nomeAtendente = user?.displayName?.toLowerCase() || "secretaria central";
+      
+      // Mensagem padronizada em lowercase
       const mensagemFinal = `documento disponível para retirada no dia ${dataRetirada} às ${horaRetirada}h na secretaria central.`.toLowerCase();
 
       await updateDoc(pedidoRef, {
         status: 'concluido',
         resposta_secretaria: mensagemFinal,
         data_resposta: serverTimestamp(),
-        liberado_por_nome: user?.displayName?.toLowerCase() || "secretaria",
+        data_liberacao: serverTimestamp(), // R S: Sincronizado com seu banco
+        liberado_por_nome: nomeAtendente,  // R S: Chave correta do Firebase
         visualizacao_aluno: true,
-        entrega_presencial: true, // Flag para o aluno saber que não é PDF
+        entrega_presencial: true,
         agendamento: {
           data: dataRetirada,
           hora: horaRetirada
@@ -72,44 +76,51 @@ export default function ModalHistorico({ pedido, onClose, user }) {
           
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
             <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Aluno Solicitante</p>
-            <p className="font-bold text-slate-800 lowercase">{pedido.aluno_nome}</p>
+            <p className="font-bold text-slate-800 lowercase">{pedido.aluno_nome || pedido.nome}</p>
+          </div>
+
+          {/* INDICADOR DE QUEM ESTÁ LIBERANDO (ROOT) */}
+          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3">
+            <ShieldCheck size={18} className="text-emerald-500" />
+            <div>
+              <p className="text-[8px] font-black uppercase text-emerald-400 leading-none mb-1">Liberando como:</p>
+              <p className="text-[10px] font-bold text-emerald-700 capitalize">
+                {user?.displayName || "Secretaria Central (Root)"}
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Data Disponível</label>
-              <div className="relative">
-                <input 
-                  type="date" 
-                  required
-                  value={dataRetirada}
-                  onChange={(e) => setDataRetirada(e.target.value)}
-                  className="w-full p-4 bg-slate-100 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-orange-500 transition-all outline-none"
-                />
-              </div>
+              <input 
+                type="date" 
+                required
+                value={dataRetirada}
+                onChange={(e) => setDataRetirada(e.target.value)}
+                className="w-full p-4 bg-slate-100 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-orange-500 transition-all outline-none"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Horário</label>
-              <div className="relative">
-                <input 
-                  type="time" 
-                  required
-                  value={horaRetirada}
-                  onChange={(e) => setHoraRetirada(e.target.value)}
-                  className="w-full p-4 bg-slate-100 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-orange-500 transition-all outline-none"
-                />
-              </div>
+              <input 
+                type="time" 
+                required
+                value={horaRetirada}
+                onChange={(e) => setHoraRetirada(e.target.value)}
+                className="w-full p-4 bg-slate-100 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-orange-500 transition-all outline-none"
+              />
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl">
             <AlertCircle size={18} className="text-blue-500 shrink-0 mt-0.5" />
             <p className="text-[10px] text-blue-700 font-medium leading-relaxed">
-              Ao confirmar, o aluno receberá um aviso no painel informando que o documento está pronto para ser retirado pessoalmente.
+              O aluno será notificado que o documento está pronto para retirada física r s.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 pt-4">
+          <div className="flex flex-col gap-3 pt-2">
             <button 
               type="submit"
               disabled={loading}
@@ -117,7 +128,7 @@ export default function ModalHistorico({ pedido, onClose, user }) {
             >
               {loading ? "Processando..." : (
                 <>
-                  <CheckCircle size={18} /> Confirmar Retirada
+                  <CheckCircle size={18} /> Confirmar e Finalizar
                 </>
               )}
             </button>

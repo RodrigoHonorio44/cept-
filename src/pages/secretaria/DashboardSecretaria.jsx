@@ -7,18 +7,19 @@ import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, serverTi
 // COMPONENTES DE FORMULÁRIO
 import FormSolicitacaoSecretaria from '../secretaria/forms/FormSolicitacaoSecretaria';
 import FormCadastroAluno from '../secretaria/forms/formCadastroAluno'; 
+// R S: IMPORTANDO OS NOVOS FORMULÁRIOS
+import FormCadastroProfessor from '../secretaria/forms/FormCadastroProfessor';
+import FormCadastroFuncionario from '../secretaria/forms/FormCadastroFuncionario';
 
 // SERVIÇOS RS
 import GeradorDocumento from './servicos/GeradorDocumento'; 
 import PainelDocumentos from './servicos/PainelDocumentos'; 
 
-// R S: NOVO MODAL PARA RETIRADA FÍSICA
-import ModalHistorico from './modals/ModalHistorico';
-
 import { 
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
-  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home, X, Plus, FileText
+  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, Home, X, Plus, FileText, Calendar, Hash,
+  GraduationCap, Briefcase // Novos ícones R S
 } from 'lucide-react';
 
 export default function DashboardSecretaria() {
@@ -26,22 +27,28 @@ export default function DashboardSecretaria() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // ESTADOS DOS MODAIS
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
+  
+  // R S: NOVOS ESTADOS PARA OS MODAIS DE CADASTRO
+  const [isProfessorModalOpen, setIsProfessorModalOpen] = useState(false);
+  const [isFuncionarioModalOpen, setIsFuncionarioModalOpen] = useState(false);
+
   const [documentoAtivo, setDocumentoAtivo] = useState(null); 
   const [pedidoParaResponder, setPedidoParaResponder] = useState(null);
-  
-  // R S: Estado para controlar o modal específico de histórico
-  const [isModalHistoricoOpen, setIsModalHistoricoOpen] = useState(false);
 
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
   const [busca, setBusca] = useState('');
 
-  // FUNÇÃO PARA FINALIZAR, SALVAR QUEM LIBEROU E ENVIAR AO ALUNO
-  const finalizarEPublicar = async (pedido) => {
-    if (!pedido) return;
+  const despacharComAgendamento = async (pedido) => {
+    const dataR = document.getElementById('data_retirada_rs')?.value;
+    const horaR = document.getElementById('hora_retirada_rs')?.value;
+
+    if (!dataR || !horaR) {
+      alert("por favor, defina data e hora para a retirada r s");
+      return;
+    }
 
     try {
       const colecao = pedido.isServico ? "solicitacoes_secretaria" : "solicitacoes_acesso";
@@ -50,24 +57,28 @@ export default function DashboardSecretaria() {
       await updateDoc(pedidoRef, {
         status: 'concluido',
         liberado_por_nome: user?.displayName?.toLowerCase() || "secretaria central",
-        liberado_por_id: user?.uid,
         data_liberacao: serverTimestamp(), 
-        documento_disponivel: true,
+        agendamento: {
+          data: dataR,
+          hora: horaR
+        },
         visualizacao_aluno: true
       });
 
-      setDocumentoAtivo({
-        aluno: { 
-          nome: pedido.nome, 
-          matricula: pedido.aluno_matricula || 'n/a' 
-        },
-        tipo: pedido.role?.includes('frequência') ? 'Frequência' : 'Matrícula'
-      });
+      if (pedido.role?.includes('matrícula') || pedido.role?.includes('frequência')) {
+        setDocumentoAtivo({
+          aluno: { 
+            nome: pedido.nome, 
+            matricula: pedido.aluno_matricula || 'n/a',
+            protocolo: pedido.id_protocolo 
+          },
+          tipo: pedido.role?.includes('frequência') ? 'Frequência' : 'Matrícula'
+        });
+      }
 
       setPedidoParaResponder(null);
     } catch (error) {
-      console.error("erro ao validar documento:", error);
-      alert("erro ao processar liberação.");
+      console.error("erro ao despachar:", error);
     }
   };
 
@@ -93,6 +104,7 @@ export default function DashboardSecretaria() {
         email: doc.data().mensagem?.toLowerCase() || '', 
         role: doc.data().tipo_servico?.toLowerCase() || 'serviço',
         timestamp: doc.data().data_pedido,
+        protocolo: doc.data().id_protocolo || 'n/a',
         isServico: true,
         origem: 'secretaria'
       }));
@@ -104,7 +116,7 @@ export default function DashboardSecretaria() {
       setSolicitacoes(todos);
       setStats({
         pendentes: todos.filter(d => d.status === 'pendente').length,
-        aprovados: todos.filter(d => d.status === 'aprovado' || d.status === 'concluido').length
+        aprovados: todos.filter(d => d.status === 'concluido').length
       });
     };
 
@@ -121,7 +133,9 @@ export default function DashboardSecretaria() {
   };
 
   const dadosFiltrados = solicitacoes.filter(s => 
-    s.nome.includes(busca.toLowerCase()) || s.email.includes(busca.toLowerCase())
+    s.nome.includes(busca.toLowerCase()) || 
+    s.email.includes(busca.toLowerCase()) || 
+    s.protocolo?.includes(busca.toLowerCase())
   );
 
   return (
@@ -140,9 +154,12 @@ export default function DashboardSecretaria() {
            <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
            <NavButton icon={ShieldCheck} label="Aprovações" sidebarOpen={sidebarOpen} onClick={() => {}} />
            
+           {/* R S: SEÇÃO DE CADASTROS ATUALIZADA */}
            <div className="mt-6 mb-6">
              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Cadastros R S</p>
              <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
+             <NavButton icon={GraduationCap} label="Professor" sidebarOpen={sidebarOpen} onClick={() => setIsProfessorModalOpen(true)} />
+             <NavButton icon={Briefcase} label="Funcionário" sidebarOpen={sidebarOpen} onClick={() => setIsFuncionarioModalOpen(true)} />
              <NavButton icon={Settings} label="Usuário Sistema" sidebarOpen={sidebarOpen} onClick={() => setIsModalOpen(true)} />
            </div>
 
@@ -167,7 +184,7 @@ export default function DashboardSecretaria() {
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-40">
-          <div>
+          <div className="text-left">
             <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">secretaria escolar</h2>
             <h1 className="text-xl font-black text-slate-800 tracking-tight italic uppercase">centro de operações</h1>
           </div>
@@ -181,7 +198,7 @@ export default function DashboardSecretaria() {
 
         <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC] custom-scrollbar">
           <div className="max-w-7xl mx-auto space-y-8 pb-20">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               <StatCard title="aguardando" value={stats.pendentes} color="amber" icon={Clock} />
               <StatCard title="aprovados" value={stats.aprovados} color="emerald" icon={CheckCircle} />
               <StatCard title="ativos" value="--" color="blue" icon={Users} />
@@ -189,12 +206,13 @@ export default function DashboardSecretaria() {
 
             <PainelDocumentos onOpenDoc={(doc) => setDocumentoAtivo(doc)} />
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+            {/* TABELA DE MOVIMENTAÇÕES R S */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-left">
               <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-10">
                 <h3 className="font-black text-slate-800 uppercase italic text-sm">Últimas Movimentações</h3>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="text" placeholder="localizar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-bold w-64 outline-none lowercase" />
+                  <input type="text" placeholder="buscar por nome ou protocolo..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-bold w-64 outline-none" />
                 </div>
               </div>
 
@@ -202,6 +220,7 @@ export default function DashboardSecretaria() {
                 <table className="w-full text-left">
                   <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-widest">
                     <tr>
+                      <th className="px-8 py-5">protocolo</th>
                       <th className="px-8 py-5">solicitante</th>
                       <th className="px-8 py-5">categoria</th>
                       <th className="px-8 py-5">data</th>
@@ -213,20 +232,17 @@ export default function DashboardSecretaria() {
                       <tr 
                         key={sol.id} 
                         className="group hover:bg-slate-50/50 transition-colors cursor-pointer" 
-                        onClick={() => {
-                          // R S: Lógica para abrir o modal correto baseado no tipo
-                          if(sol.role?.includes('histórico')) {
-                            setPedidoParaResponder(sol);
-                            setIsModalHistoricoOpen(true);
-                          } else {
-                            setPedidoParaResponder(sol);
-                          }
-                        }}
+                        onClick={() => setPedidoParaResponder(sol)}
                       >
-                        <td className="px-8 py-6 lowercase">
+                        <td className="px-8 py-6">
+                          <span className="font-black text-blue-600 text-[10px] uppercase italic bg-blue-50 px-3 py-1 rounded-lg">
+                            {sol.protocolo || '---'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6">
                           <div className="flex flex-col">
-                            <span className="font-black text-slate-700 text-xs">{sol.nome}</span>
-                            <span className="text-[10px] text-slate-400">{sol.email}</span>
+                            <span className="font-black text-slate-700 text-xs capitalize">{sol.nome}</span>
+                            <span className="text-[10px] text-slate-400 lowercase">{sol.email}</span>
                           </div>
                         </td>
                         <td className="px-8 py-6 uppercase text-[9px] font-black text-slate-500">{sol.role}</td>
@@ -251,55 +267,96 @@ export default function DashboardSecretaria() {
         </section>
       </main>
 
-      {/* MODAL DE RESPOSTA E LIBERAÇÃO DIGITAL R S */}
-      {pedidoParaResponder && !isModalHistoricoOpen && (
+      {/* MODAIS RS: PROFESSOR E FUNCIONÁRIO */}
+      {isProfessorModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsProfessorModalOpen(false)}></div>
+          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
+            <button onClick={() => setIsProfessorModalOpen(false)} className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"><X size={24} /></button>
+            <FormCadastroProfessor />
+          </div>
+        </div>
+      )}
+
+      {isFuncionarioModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsFuncionarioModalOpen(false)}></div>
+          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
+            <button onClick={() => setIsFuncionarioModalOpen(false)} className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"><X size={24} /></button>
+            <FormCadastroFuncionario />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE RESPOSTA MANTIDO */}
+      {pedidoParaResponder && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-           <div className="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl relative">
-              <button onClick={() => setPedidoParaResponder(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600"><X size={20} /></button>
-              <h2 className="text-xl font-black uppercase italic mb-6">Despachar Pedido</h2>
-              <div className="space-y-4 mb-8">
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[10px] uppercase text-slate-400 font-black mb-1">aluno solicitante</p>
-                  <p className="text-sm font-black text-slate-800 lowercase">{pedidoParaResponder.nome}</p>
+           <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl relative border border-slate-100">
+              <button onClick={() => setPedidoParaResponder(null)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors">
+                <X size={20} />
+              </button>
+              
+              <h2 className="text-xl font-black uppercase italic mb-8 tracking-tighter text-slate-800">Despachar Pedido R S</h2>
+              
+              <div className="space-y-4 mb-8 text-left">
+                <div className="p-5 bg-slate-50 rounded-[2rem]">
+                  <p className="text-[9px] uppercase text-slate-400 font-black mb-1 tracking-widest">aluno solicitante</p>
+                  <p className="text-xs font-black text-slate-700 capitalize">{pedidoParaResponder.nome}</p>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[10px] uppercase text-slate-400 font-black mb-1">serviço solicitado</p>
-                  <p className="text-sm font-black text-slate-800 uppercase">{pedidoParaResponder.role}</p>
+                {pedidoParaResponder.protocolo && (
+                  <div className="p-5 bg-blue-50 rounded-[2rem]">
+                    <p className="text-[9px] uppercase text-blue-400 font-black mb-1 tracking-widest">número do protocolo</p>
+                    <p className="text-xs font-black text-blue-700 uppercase italic">{pedidoParaResponder.protocolo}</p>
+                  </div>
+                )}
+                <div className="p-5 bg-slate-50 rounded-[2rem]">
+                  <p className="text-[9px] uppercase text-slate-400 font-black mb-1 tracking-widest">serviço solicitado</p>
+                  <p className="text-xs font-black text-slate-700 uppercase italic">{pedidoParaResponder.role}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50/50 p-4 rounded-3xl border border-blue-100">
+                    <label className="text-[9px] font-black uppercase text-blue-400 mb-2 flex items-center gap-1">
+                      <Calendar size={12}/> retirada
+                    </label>
+                    <input 
+                      type="date" 
+                      id="data_retirada_rs"
+                      defaultValue={pedidoParaResponder.agendamento?.data || ""}
+                      className="w-full bg-transparent border-none text-[11px] font-bold outline-none text-blue-700"
+                    />
+                  </div>
+                  <div className="bg-blue-50/50 p-4 rounded-3xl border border-blue-100">
+                    <label className="text-[9px] font-black uppercase text-blue-400 mb-2 flex items-center gap-1">
+                      <Clock size={12}/> horário
+                    </label>
+                    <input 
+                      type="time" 
+                      id="hora_retirada_rs"
+                      defaultValue={pedidoParaResponder.agendamento?.hora || ""}
+                      className="w-full bg-transparent border-none text-[11px] font-bold outline-none text-blue-700"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="flex flex-col gap-3">
                 <button 
-                  onClick={() => finalizarEPublicar(pedidoParaResponder)}
-                  className="bg-blue-600 text-white p-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex flex-col items-center gap-1 shadow-lg shadow-blue-200"
+                  onClick={() => despacharComAgendamento(pedidoParaResponder)}
+                  className="bg-blue-600 text-white p-6 rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-blue-100 flex flex-col items-center gap-1"
                 >
                   <span>Liberar para o Aluno</span>
-                  <span className="text-[8px] opacity-70">e imprimir via sistema</span>
+                  <span className="text-[8px] opacity-70">e agendar retirada física</span>
                 </button>
-                <button 
-                  onClick={() => setPedidoParaResponder(null)}
-                  className="bg-slate-100 text-slate-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all"
-                >
-                  Voltar
+                <button onClick={() => setPedidoParaResponder(null)} className="text-[9px] font-black uppercase text-slate-400 tracking-widest py-2">
+                  cancelar operação
                 </button>
               </div>
            </div>
         </div>
       )}
 
-      {/* R S: MODAL ESPECÍFICO PARA HISTÓRICO (RETIRADA FÍSICA) */}
-      {isModalHistoricoOpen && pedidoParaResponder && (
-        <ModalHistorico 
-          pedido={pedidoParaResponder} 
-          user={user}
-          onClose={() => {
-            setIsModalHistoricoOpen(false);
-            setPedidoParaResponder(null);
-          }} 
-        />
-      )}
-
-      {/* MODAIS DE APOIO */}
+      {/* MODAIS DE APOIO MANTIDOS */}
       <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       {isCadastroModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -322,7 +379,6 @@ export default function DashboardSecretaria() {
   );
 }
 
-// COMPONENTES AUXILIARES MANTIDOS
 function NavButton({ icon: Icon, label, active, sidebarOpen, onClick }) {
   return (
     <button onClick={onClick} className={`flex items-center gap-4 w-full px-4 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all duration-300 ${active ? "bg-blue-600 text-white shadow-xl shadow-blue-900/20" : "text-slate-500 hover:bg-white/5 hover:text-white"} ${!sidebarOpen && "justify-center px-0"}`}>
