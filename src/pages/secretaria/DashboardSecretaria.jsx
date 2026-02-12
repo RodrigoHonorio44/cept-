@@ -156,7 +156,7 @@ export default function DashboardSecretaria() {
             <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
             
             <div className="mt-6 mb-6">
-              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Gestão Escolar R S</p>
+              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Gestão Escolar </p>
               <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
               <NavButton icon={GraduationCap} label="Professor" sidebarOpen={sidebarOpen} onClick={() => setIsProfessorModalOpen(true)} />
               <NavButton icon={Map} label="Grade de Aulas" sidebarOpen={sidebarOpen} onClick={() => setProfParaGrade({ nome: "gerenciamento geral", id: "todos" })} />

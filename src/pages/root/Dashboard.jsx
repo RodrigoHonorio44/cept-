@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // r s: necessário para navegar
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth'; 
 import { useDashboard } from '../../hooks/useDashboard'; 
 import FormUsuarioSistema from '../root/forms/formusuariosistema'; 
@@ -8,11 +8,11 @@ import {
   Users, Activity, HardDrive, UserPlus, Search, 
   ShieldCheck, MoreVertical, Settings, LayoutDashboard,
   ChevronLeft, ChevronRight, CheckCircle, Clock,
-  Home, LogOut // r s: novos ícones
+  Home, LogOut 
 } from 'lucide-react';
 
 export default function DashboardRoot() {
-  const { userdata, logout } = useAuth(); // r s: pegando a função logout
+  const { userdata, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebar_open, set_sidebar_open] = useState(true);
   
@@ -22,13 +22,28 @@ export default function DashboardRoot() {
     total_usuarios, total_pedidos,
     busca, set_busca, 
     is_modal_open, set_is_modal_open,
-    formatar_nome,
-    buscar_dados 
+    formatar_nome, // r s: Mantido conforme solicitado
+    atualizar_e_fechar,
+    pedido_selecionado, 
+    abrir_com_pedido
   } = useDashboard();
 
-  const lidar_com_sucesso = () => {
-    set_is_modal_open(false);
-    if (buscar_dados) buscar_dados();
+  // r s: Função interna para garantir exibição com letras normais (Ex: Caio Giromba)
+  const exibirNormal = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  // r s: Tratamento de data para incluir hora (Firebase Timestamp ou Date)
+  const formatarDataHora = (ts) => {
+    if (!ts) return '---';
+    try {
+      const data = ts.toDate ? ts.toDate() : new Date(ts);
+      return data.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch (e) { return '---'; }
   };
 
   const lidar_com_logout = async () => {
@@ -36,7 +51,7 @@ export default function DashboardRoot() {
       await logout();
       navigate('/login');
     } catch (error) {
-      console.error("erro ao sair:", error);
+      console.error("erro ao sair r s:", error);
     }
   };
 
@@ -58,7 +73,6 @@ export default function DashboardRoot() {
           </h1>
         </div>
 
-        {/* Menu Principal */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
           <NavButton 
             icon={LayoutDashboard} label="usuários" 
@@ -80,7 +94,6 @@ export default function DashboardRoot() {
             sidebar_open={sidebar_open} 
           />
 
-          {/* r s: Divisor e botão para voltar ao Home */}
           <div className="pt-4 mt-4 border-t border-white/5">
             <NavButton 
               icon={Home} label="ir para home" 
@@ -91,7 +104,6 @@ export default function DashboardRoot() {
           </div>
         </nav>
 
-        {/* Rodapé da Sidebar com Logout r s */}
         <div className="p-4 border-t border-white/5 bg-black/10 shrink-0">
             <button 
               onClick={lidar_com_logout}
@@ -113,16 +125,19 @@ export default function DashboardRoot() {
               comando <span className="text-blue-600">root</span>
             </h1>
             <p className="text-slate-400 text-[9px] font-black tracking-widest uppercase mt-0.5">
-              operador: {userdata?.nome?.toLowerCase() || 'admin'}
+              operador: {exibirNormal(userdata?.nome) || 'admin'}
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => set_is_modal_open(true)}
+              onClick={() => {
+                set_busca(''); // Limpa busca ao abrir manual
+                set_is_modal_open(true);
+              }}
               className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
             >
-              <UserPlus size={16} /> {sidebar_open && "novo acesso"}
+              <UserPlus size={16} /> {sidebar_open && "novo acesso manual"}
             </button>
           </div>
         </header>
@@ -164,7 +179,8 @@ export default function DashboardRoot() {
                         <tr key={user.id} className="group hover:bg-slate-50/50 transition-colors">
                           <td className="px-8 py-6">
                             <div className="flex flex-col">
-                              <span className="font-black text-slate-700 text-xs">{formatar_nome(user.nome)}</span>
+                              {/* r s: Exibição Capitalizada */}
+                              <span className="font-black text-slate-700 text-xs">{exibirNormal(user.nome)}</span>
                               <span className="text-[10px] text-slate-400 lowercase">{user.email}</span>
                             </div>
                           </td>
@@ -176,7 +192,7 @@ export default function DashboardRoot() {
                             </span>
                           </td>
                           <td className="px-8 py-6 text-[11px] text-slate-500 font-bold italic">
-                            {user.criado_em ? new Date(user.criado_em).toLocaleDateString() : '---'}
+                            {user.criado_em ? formatarDataHora(user.criado_em) : '---'}
                           </td>
                           <td className="px-8 py-6 text-right">
                             <button className="text-slate-300 hover:text-blue-600 transition-colors">
@@ -192,40 +208,56 @@ export default function DashboardRoot() {
             )}
 
             {active_tab === 'pedidos' && (
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="p-8 border-b border-slate-50">
-                    <h3 className="font-black text-slate-800 uppercase italic text-sm">solicitações da secretaria</h3>
+               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                    <h3 className="font-black text-slate-800 uppercase italic text-sm">solicitações de acesso</h3>
+                    <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-4 py-1 rounded-full uppercase italic">r s — central de chamados</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-widest">
                         <tr>
-                          <th className="px-8 py-5">interessado</th>
-                          <th className="px-8 py-5">cargo</th>
+                          <th className="px-8 py-5">interessado / protocolo</th>
+                          <th className="px-8 py-5">origem</th>
+                          <th className="px-8 py-5">data / hora</th>
                           <th className="px-8 py-5 text-right">comando</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {pedidos.map((ped) => (
-                          <tr key={ped.id} className="group hover:bg-blue-50/30">
+                          <tr key={ped.id} className="group hover:bg-blue-50/30 transition-all">
                             <td className="px-8 py-6">
                               <div className="flex flex-col">
-                                <span className="font-black text-slate-700 text-xs">{formatar_nome(ped.nome)}</span>
-                                <span className="text-[10px] text-slate-400">{ped.email}</span>
+                                <span className="font-black text-slate-700 text-xs">{exibirNormal(ped.nome)}</span>
+                                <span className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">PROTO: {ped.protocolo || '---'}</span>
                               </div>
                             </td>
                             <td className="px-8 py-6">
-                               <span className="bg-amber-100 text-amber-600 px-3 py-1 rounded-md text-[9px] font-black uppercase">
-                                  {ped.role || 'pendente'}
-                               </span>
+                               <div className="flex flex-col">
+                                 <span className="text-[10px] font-black text-slate-600 uppercase italic">{exibirNormal(ped.solicitadoPor || 'externo')}</span>
+                                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{ped.role}</span>
+                               </div>
+                            </td>
+                            <td className="px-8 py-6 text-[10px] text-slate-500 font-black italic">
+                              {ped.dataSolicitacao ? formatarDataHora(ped.dataSolicitacao) : '---'}
                             </td>
                             <td className="px-8 py-6 text-right">
-                              <button className="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase hover:bg-blue-700 transition-all flex items-center gap-2 ml-auto">
-                                <CheckCircle size={14} /> liberar acesso
+                              <button 
+                                onClick={() => abrir_com_pedido(ped)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase hover:bg-blue-700 transition-all flex items-center gap-2 ml-auto shadow-md active:scale-95"
+                              >
+                                <CheckCircle size={14} /> liberar acesso r s
                               </button>
                             </td>
                           </tr>
                         ))}
+                        {pedidos.length === 0 && (
+                          <tr>
+                            <td colSpan="4" className="px-8 py-20 text-center text-slate-300 font-black uppercase text-[10px] tracking-[0.3em]">
+                              nenhuma solicitação pendente no sistema
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -243,14 +275,18 @@ export default function DashboardRoot() {
         </section>
       </main>
 
+      {/* r s: Modal recebendo dadosPreenchidos do hook para auto-complete */}
       <FormUsuarioSistema 
         isOpen={is_modal_open} 
-        onClose={() => set_is_modal_open(false)} 
-        aoSucesso={lidar_com_sucesso}
+        onClose={atualizar_e_fechar} 
+        aoSucesso={atualizar_e_fechar}
+        dadosPreenchidos={pedido_selecionado}
       />
     </div>
   );
 }
+
+// ... (NavButton e StatCard permanecem os mesmos conforme seu código original)
 
 function NavButton({ icon: Icon, label, active, sidebar_open, onClick, badge }) {
   return (
@@ -262,7 +298,7 @@ function NavButton({ icon: Icon, label, active, sidebar_open, onClick, badge }) 
       <Icon size={22} />
       {sidebar_open && <span>{label}</span>}
       {badge && (
-        <span className="absolute right-4 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse">
+        <span className="absolute right-4 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse font-bold">
           {badge}
         </span>
       )}
@@ -277,7 +313,7 @@ function StatCard({ label, value, color, icon: Icon }) {
     orange: "bg-orange-50 text-orange-500",
   };
   return (
-    <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group">
+    <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group transition-all hover:border-blue-100">
       <div>
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
         <h3 className="text-3xl font-black tracking-tighter text-slate-900">{value}</h3>
