@@ -13,7 +13,7 @@ import FormCadastroAluno from '../secretaria/forms/formCadastroAluno';
 import FormCadastroProfessor from '../secretaria/forms/FormCadastroProfessor';
 import FormCadastroFuncionario from '../secretaria/forms/FormCadastroFuncionario';
 
-// R S: NOVO COMPONENTE DE GRADE (IMPORTADO PARA O MODAL)
+// R S: NOVO COMPONENTE DE GRADE
 import GestorGradeSecretaria from '../secretaria/GestorGradeSecretaria'; 
 
 // SERVIÇOS RS
@@ -23,7 +23,7 @@ import PainelDocumentos from './servicos/PainelDocumentos';
 import { 
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
-  ShieldCheck, Settings, LogOut, ChevronLeft, ChevronRight, 
+  LogOut, ChevronLeft, ChevronRight, 
   Home, X, Plus, FileText, Calendar, GraduationCap, Briefcase, Map
 } from 'lucide-react';
 
@@ -38,9 +38,7 @@ export default function DashboardSecretaria() {
   const [isProfessorModalOpen, setIsProfessorModalOpen] = useState(false);
   const [isFuncionarioModalOpen, setIsFuncionarioModalOpen] = useState(false);
   
-  // R S: ESTADO PARA ABRIR O GESTOR DE GRADE (PASSANDO O PROFESSOR SELECIONADO)
   const [profParaGrade, setProfParaGrade] = useState(null);
-
   const [documentoAtivo, setDocumentoAtivo] = useState(null); 
   const [pedidoParaResponder, setPedidoParaResponder] = useState(null);
 
@@ -48,7 +46,6 @@ export default function DashboardSecretaria() {
   const [stats, setStats] = useState({ pendentes: 0, aprovados: 0 });
   const [busca, setBusca] = useState('');
 
-  // Lógica de Despacho R S
   const despacharComAgendamento = async (pedido) => {
     const dataR = document.getElementById('data_retirada_rs')?.value;
     const horaR = document.getElementById('hora_retirada_rs')?.value;
@@ -66,10 +63,7 @@ export default function DashboardSecretaria() {
         status: 'concluido',
         liberado_por_nome: user?.displayName?.toLowerCase() || "secretaria central",
         data_liberacao: serverTimestamp(), 
-        agendamento: {
-          data: dataR,
-          hora: horaR
-        },
+        agendamento: { data: dataR, hora: horaR },
         visualizacao_aluno: true
       });
 
@@ -83,22 +77,19 @@ export default function DashboardSecretaria() {
           tipo: pedido.role?.includes('frequência') ? 'Frequência' : 'Matrícula'
         });
       }
-
       setPedidoParaResponder(null);
     } catch (error) {
       console.error("erro ao despachar:", error);
     }
   };
 
-  // Monitoramento em tempo real R S
   useEffect(() => {
     const qAcesso = query(collection(db, "solicitacoes_acesso"), orderBy("dataSolicitacao", "desc"), limit(10));
     const qSecretaria = query(collection(db, "solicitacoes_secretaria"), orderBy("data_pedido", "desc"), limit(10));
 
     const processarDocs = (snapshotAcesso, snapshotSec) => {
       const docsAcesso = snapshotAcesso.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data(),
+        id: doc.id, ...doc.data(),
         nome: doc.data().nome?.toLowerCase() || '',
         email: doc.data().email?.toLowerCase() || '',
         role: doc.data().role?.toLowerCase() || 'estudante',
@@ -107,8 +98,7 @@ export default function DashboardSecretaria() {
       }));
 
       const docsSec = snapshotSec.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data(),
+        id: doc.id, ...doc.data(),
         nome: doc.data().aluno_nome?.toLowerCase() || '',
         email: doc.data().mensagem?.toLowerCase() || '', 
         role: doc.data().tipo_servico?.toLowerCase() || 'serviço',
@@ -150,33 +140,25 @@ export default function DashboardSecretaria() {
   return (
     <div className="fixed inset-0 bg-[#F8FAFC] font-sans antialiased text-slate-900 flex overflow-hidden z-[9999]">
       
-      {/* SIDEBAR R S */}
+      {/* SIDEBAR */}
       <aside className={`${sidebarOpen ? "w-72" : "w-24"} bg-[#0f172a] flex flex-col transition-all duration-500 relative z-50 shrink-0 h-full`}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute -right-3 top-12 bg-white border border-slate-200 text-slate-400 p-1.5 rounded-full shadow-sm z-[60]">
           {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
         </button>
-        <div className="h-28 flex items-center px-8 border-b border-white/5 shrink-0">
-          <h1 className={`text-white font-black italic uppercase tracking-tighter ${sidebarOpen ? "text-2xl" : "text-xl mx-auto"}`}>
-            {sidebarOpen ? <>Cept <span className="text-blue-500">Secretária</span></> : "C"}
-          </h1>
+        <div className="h-28 flex items-center px-8 border-b border-white/5 shrink-0 text-white">
+            <h1 className={`font-black italic uppercase tracking-tighter ${sidebarOpen ? "text-2xl" : "text-xl mx-auto"}`}>
+                {sidebarOpen ? <>Cept <span className="text-blue-500">Secretária</span></> : "C"}
+            </h1>
         </div>
         
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar text-white">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
            <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
            
            <div className="mt-6 mb-6">
              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Gestão Escolar R S</p>
              <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
              <NavButton icon={GraduationCap} label="Professor" sidebarOpen={sidebarOpen} onClick={() => setIsProfessorModalOpen(true)} />
-             
-             {/* R S: NOVO BOTÃO DE GRADE NA SIDEBAR */}
-             <NavButton 
-                icon={Map} 
-                label="Grade de Aulas" 
-                sidebarOpen={sidebarOpen} 
-                onClick={() => setProfParaGrade({ nome: "gerenciamento geral", id: "todos" })} 
-             />
-             
+             <NavButton icon={Map} label="Grade de Aulas" sidebarOpen={sidebarOpen} onClick={() => setProfParaGrade({ nome: "gerenciamento geral", id: "todos" })} />
              <NavButton icon={Briefcase} label="Funcionário" sidebarOpen={sidebarOpen} onClick={() => setIsFuncionarioModalOpen(true)} />
            </div>
 
@@ -198,24 +180,21 @@ export default function DashboardSecretaria() {
         </div>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL R S */}
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="h-24 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-40">
           <div className="text-left">
             <h2 className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">secretaria escolar</h2>
             <h1 className="text-xl font-black text-slate-800 tracking-tight italic uppercase">centro de operações </h1>
           </div>
-          <div className="flex gap-3">
-             <button onClick={() => setIsCadastroModalOpen(true)} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all">
-                <Plus size={16} /> Novo Aluno
-             </button>
-          </div>
+          <button onClick={() => setIsCadastroModalOpen(true)} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all">
+            <Plus size={16} /> Novo Aluno
+          </button>
         </header>
 
         <section className="flex-1 overflow-y-auto p-10 bg-[#F8FAFC] custom-scrollbar">
-          <div className="max-w-7xl mx-auto space-y-8 pb-20">
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          <div className="max-w-7xl mx-auto space-y-8 pb-20 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard title="aguardando" value={stats.pendentes} color="amber" icon={Clock} />
               <StatCard title="aprovados" value={stats.aprovados} color="emerald" icon={CheckCircle} />
               <StatCard title="colaboradores" value="--" color="blue" icon={Users} />
@@ -223,18 +202,18 @@ export default function DashboardSecretaria() {
 
             <PainelDocumentos onOpenDoc={(doc) => setDocumentoAtivo(doc)} />
 
-            {/* TABELA DE MOVIMENTAÇÕES R S */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-left">
+            {/* TABELA */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white sticky top-0 z-10">
                 <h3 className="font-black text-slate-800 uppercase italic text-sm">Últimas Movimentações</h3>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="text" placeholder="buscar nome ou protocolo..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-bold w-64 outline-none" />
+                  <input type="text" placeholder="buscar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-12 pr-6 py-3 bg-slate-50 border-none rounded-xl text-[11px] font-bold w-64 outline-none" />
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full">
                   <thead className="bg-slate-50/50 text-slate-400 text-[9px] uppercase font-black tracking-widest">
                     <tr>
                       <th className="px-8 py-5">protocolo</th>
@@ -276,57 +255,68 @@ export default function DashboardSecretaria() {
         </section>
       </main>
 
-      {/* MODAL DO GESTOR DE GRADE R S */}
+      {/* --- SEÇÃO DE TELAS CHEIAS (REMOVIDO EFEITO DE CARD) --- */}
+
+      {/* NOVO ALUNO - FULL SCREEN */}
+      {isCadastroModalOpen && (
+        <div className="fixed inset-0 z-[10000] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-300">
+          <header className="h-20 flex items-center justify-between px-10 border-b border-slate-100 bg-white shrink-0">
+            <h2 className="text-xl font-black uppercase italic text-slate-800 tracking-tighter">Nova Matrícula de Aluno</h2>
+            <button onClick={() => setIsCadastroModalOpen(false)} className="bg-slate-900 text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center gap-2">
+              <X size={18} /> fechar
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+             <FormCadastroAluno />
+          </div>
+        </div>
+      )}
+
+      {/* PROFESSOR - FULL SCREEN */}
+      {isProfessorModalOpen && (
+        <div className="fixed inset-0 z-[10000] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-300">
+          <header className="h-20 flex items-center justify-between px-10 border-b border-slate-100 bg-white shrink-0">
+            <h2 className="text-xl font-black uppercase italic text-slate-800 tracking-tighter">Cadastro de Professor</h2>
+            <button onClick={() => setIsProfessorModalOpen(false)} className="bg-slate-900 text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center gap-2">
+              <X size={18} /> fechar
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+             <FormCadastroProfessor />
+          </div>
+        </div>
+      )}
+
+      {/* FUNCIONÁRIO - FULL SCREEN */}
+      {isFuncionarioModalOpen && (
+        <div className="fixed inset-0 z-[10000] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-300">
+          <header className="h-20 flex items-center justify-between px-10 border-b border-slate-100 bg-white shrink-0">
+            <h2 className="text-xl font-black uppercase italic text-slate-800 tracking-tighter">Cadastro de Funcionário</h2>
+            <button onClick={() => setIsFuncionarioModalOpen(false)} className="bg-slate-900 text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center gap-2">
+              <X size={18} /> fechar
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+             <FormCadastroFuncionario />
+          </div>
+        </div>
+      )}
+
+      {/* --- SEÇÃO DE MODAIS SOBREPOSTOS (MANTIDOS COMO CARDS) --- */}
+
       {profParaGrade && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setProfParaGrade(null)}></div>
           <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl p-4">
-             <GestorGradeSecretaria 
-                professor={profParaGrade} 
-                aoFechar={() => setProfParaGrade(null)} 
-             />
+             <GestorGradeSecretaria professor={profParaGrade} aoFechar={() => setProfParaGrade(null)} />
           </div>
         </div>
       )}
 
-      {/* MODAL CADASTRO PROFESSOR */}
-      {isProfessorModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsProfessorModalOpen(false)}></div>
-          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
-            <button onClick={() => setIsProfessorModalOpen(false)} className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"><X size={24} /></button>
-            <FormCadastroProfessor />
-          </div>
-        </div>
-      )}
-
-      {/* MODAL CADASTRO FUNCIONÁRIO */}
-      {isFuncionarioModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsFuncionarioModalOpen(false)}></div>
-          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
-            <button onClick={() => setIsFuncionarioModalOpen(false)} className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"><X size={24} /></button>
-            <FormCadastroFuncionario />
-          </div>
-        </div>
-      )}
-
-      {/* MODAL CADASTRO ALUNO */}
-      {isCadastroModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsCadastroModalOpen(false)}></div>
-          <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-white rounded-[40px] shadow-2xl custom-scrollbar">
-            <button onClick={() => setIsCadastroModalOpen(false)} className="absolute top-8 right-8 z-[110] bg-slate-100 text-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"><X size={24} /></button>
-            <FormCadastroAluno />
-          </div>
-        </div>
-      )}
-
-      {/* MODAL RESPOSTA/DESPACHO */}
       {pedidoParaResponder && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10060] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
            <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl relative border border-slate-100 text-left">
-              <button onClick={() => setPedidoParaResponder(null)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+              <button onClick={() => setPedidoParaResponder(null)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500"><X size={20} /></button>
               <h2 className="text-xl font-black uppercase italic mb-8 tracking-tighter text-slate-800">Despachar Pedido R S</h2>
               <div className="space-y-4 mb-8">
                 <div className="p-5 bg-slate-50 rounded-[2rem]">
