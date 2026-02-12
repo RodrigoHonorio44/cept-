@@ -3,7 +3,7 @@ import { db } from '../../../services/firebase';
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { 
   User, Calendar, Hash, MapPin, Users, Clock,
-  Phone, GraduationCap, Save, Loader2, Info, Lock, Unlock, Eraser
+  Phone, GraduationCap, Save, Loader2, Info, Lock, Unlock, Eraser, Mail
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -14,14 +14,15 @@ const FormCadastroAluno = () => {
   const [isLocked, setIsLocked] = useState(true);
   
   const initialFormState = {
-    matricula: '', // Alterado para vazio para o placeholder "e-cidade" aparecer
+    matricula: '', 
     nome: '',
     dataNascimento: '',
     genero: '',
     cpf: '',
     rg: '',
-    turma: '', // Campo mantido
-    periodo: '', // Campo mantido
+    email_aluno: '', 
+    turma: '', 
+    periodo: '', 
     cep: '',
     rua: '',
     complemento: '',
@@ -32,6 +33,7 @@ const FormCadastroAluno = () => {
     parentesco_responsavel: '',
     cpf_responsavel: '',
     rg_responsavel: '',
+    email_responsavel: '', 
     contatoEmergencia: ''
   };
 
@@ -73,7 +75,9 @@ const FormCadastroAluno = () => {
           rua: formatar(dados.rua),
           bairro: formatar(dados.bairro),
           complemento: formatar(dados.complemento),
-          matricula: dados.matricula || ''
+          matricula: dados.matricula || '',
+          email_aluno: dados.email_aluno || '',
+          email_responsavel: dados.email_responsavel || ''
         });
         toast.success("DADOS LOCALIZADOS");
       }
@@ -117,6 +121,14 @@ const FormCadastroAluno = () => {
       return acc;
     }, {});
 
+    const emailAcesso = dataToSave.email_aluno || dataToSave.email_responsavel;
+    
+    if (!emailAcesso) {
+      toast.error("É NECESSÁRIO AO MENOS UM E-MAIL PARA ACESSO FUTURO");
+      setLoading(false);
+      return;
+    }
+
     const numMatricula = dataToSave.matricula.replace(/\D/g, '');
     const idSufixo = dataToSave.cpf ? dataToSave.cpf : dataToSave.cpf_responsavel;
     const idUnico = `ecidade_${numMatricula}_${idSufixo}`;
@@ -124,6 +136,7 @@ const FormCadastroAluno = () => {
     try {
       await setDoc(doc(db, "cadastro_aluno", idUnico), {
         ...dataToSave,
+        email_principal: emailAcesso,
         idUnico: idUnico,
         dataAtualizacao: serverTimestamp(),
       });
@@ -192,7 +205,6 @@ const FormCadastroAluno = () => {
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-4">Idade</label>
                 <div className="input-rs bg-blue-50/50 border-blue-100 text-blue-700 flex items-center gap-2 font-black uppercase"><Calendar size={14} /> {idade || "---"}</div>
               </div>
-              {/* CAMPOS READICIONADOS ABAIXO */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-4">Turma</label>
                 <input name="turma" required value={formData.turma} onChange={handleChange} placeholder="Ex: 1001" className="input-rs" />
@@ -208,14 +220,18 @@ const FormCadastroAluno = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-4">CPF Aluno</label>
-                <input name="cpf" value={formData.cpf} onChange={handleChange} disabled={isLocked} placeholder="Só números" className={`input-rs ${isLocked ? 'opacity-50' : ''}`} />
+                <input name="cpf" value={formData.cpf} onChange={handleChange} disabled={isLocked} placeholder="Só números" className={`input-rs ${isLocked ? 'opacity-50 pointer-events-none' : ''}`} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-4">RG Aluno</label>
-                <input name="rg" value={formData.rg} onChange={handleChange} disabled={isLocked} placeholder="Só números" className={`input-rs ${isLocked ? 'opacity-50' : ''}`} />
+                <input name="rg" value={formData.rg} onChange={handleChange} disabled={isLocked} placeholder="Só números" className={`input-rs ${isLocked ? 'opacity-50 pointer-events-none' : ''}`} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-blue-600 uppercase ml-4 flex items-center gap-2"><Mail size={12}/> E-mail do Aluno</label>
+                <input name="email_aluno" type="email" value={formData.email_aluno} onChange={handleChange} disabled={isLocked} placeholder="email@aluno.com" className={`input-rs border-blue-100 ${isLocked ? 'opacity-50 pointer-events-none' : ''}`} />
               </div>
             </div>
           </section>
@@ -258,6 +274,12 @@ const FormCadastroAluno = () => {
                 <div className="md:col-span-4 space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-4">CPF do Responsável</label>
                   <input name="cpf_responsavel" required value={formData.cpf_responsavel} onChange={handleChange} placeholder="Só números" className="input-rs bg-white" />
+                </div>
+                <div className="md:col-span-12 space-y-2">
+                  <label className="text-[10px] font-black text-blue-600 uppercase ml-4 flex items-center gap-2">
+                    <Mail size={12}/> E-mail do Responsável (Usado para acesso se o aluno não tiver e-mail)
+                  </label>
+                  <input name="email_responsavel" type="email" required={!formData.email_aluno} value={formData.email_responsavel} onChange={handleChange} placeholder="email@responsavel.com" className="input-rs bg-white border-blue-100" />
                 </div>
               </div>
             </div>

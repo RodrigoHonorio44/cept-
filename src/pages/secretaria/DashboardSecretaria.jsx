@@ -24,7 +24,8 @@ import {
   UserPlus, Clock, CheckCircle, Users, Search, 
   ArrowRight, ClipboardList, LayoutDashboard, 
   LogOut, ChevronLeft, ChevronRight, 
-  Home, X, Plus, FileText, Calendar, GraduationCap, Briefcase, Map
+  Home, X, Plus, FileText, Calendar, GraduationCap, Briefcase, Map,
+  UserCog // Ícone para Cadastro de Sistema
 } from 'lucide-react';
 
 export default function DashboardSecretaria() {
@@ -152,25 +153,36 @@ export default function DashboardSecretaria() {
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
-           <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
-           
-           <div className="mt-6 mb-6">
-             <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Gestão Escolar R S</p>
-             <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
-             <NavButton icon={GraduationCap} label="Professor" sidebarOpen={sidebarOpen} onClick={() => setIsProfessorModalOpen(true)} />
-             <NavButton icon={Map} label="Grade de Aulas" sidebarOpen={sidebarOpen} onClick={() => setProfParaGrade({ nome: "gerenciamento geral", id: "todos" })} />
-             <NavButton icon={Briefcase} label="Funcionário" sidebarOpen={sidebarOpen} onClick={() => setIsFuncionarioModalOpen(true)} />
-           </div>
+            <NavButton icon={LayoutDashboard} label="Painel Geral" active sidebarOpen={sidebarOpen} onClick={() => {}} />
+            
+            <div className="mt-6 mb-6">
+              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Gestão Escolar R S</p>
+              <NavButton icon={UserPlus} label="Novo Aluno" sidebarOpen={sidebarOpen} onClick={() => setIsCadastroModalOpen(true)} />
+              <NavButton icon={GraduationCap} label="Professor" sidebarOpen={sidebarOpen} onClick={() => setIsProfessorModalOpen(true)} />
+              <NavButton icon={Map} label="Grade de Aulas" sidebarOpen={sidebarOpen} onClick={() => setProfParaGrade({ nome: "gerenciamento geral", id: "todos" })} />
+              <NavButton icon={Briefcase} label="Funcionário" sidebarOpen={sidebarOpen} onClick={() => setIsFuncionarioModalOpen(true)} />
+            </div>
 
-           <div className="mb-6">
-             <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Serviços Digitais</p>
-             <NavButton icon={ClipboardList} label="Declarações/QR" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Matrícula' })} />
-             <NavButton icon={FileText} label="Frequência" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Frequência' })} />
-           </div>
+            <div className="mb-6">
+              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Serviços Digitais</p>
+              <NavButton icon={ClipboardList} label="Declarações/QR" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Matrícula' })} />
+              <NavButton icon={FileText} label="Frequência" sidebarOpen={sidebarOpen} onClick={() => setDocumentoAtivo({ aluno: null, tipo: 'Frequência' })} />
+            </div>
 
-           <div className="pt-4 border-t border-white/5">
-              <NavButton icon={Home} label="Ver Site" sidebarOpen={sidebarOpen} onClick={() => navigate('/')} />
-           </div>
+            {/* NOVA SEÇÃO: CADASTRO SISTEMA */}
+            <div className="mb-6">
+              <p className={`text-[9px] font-black text-slate-500 uppercase px-4 mb-2 tracking-[0.2em] ${!sidebarOpen && 'hidden'}`}>Configurações</p>
+              <NavButton 
+                icon={UserCog} 
+                label="Cadastro Sistema" 
+                sidebarOpen={sidebarOpen} 
+                onClick={() => setIsModalOpen(true)} 
+              />
+            </div>
+
+            <div className="pt-4 border-t border-white/5">
+               <NavButton icon={Home} label="Ver Site" sidebarOpen={sidebarOpen} onClick={() => navigate('/')} />
+            </div>
         </nav>
         
         <div className="p-4 border-t border-white/5 bg-black/10 shrink-0">
@@ -255,7 +267,8 @@ export default function DashboardSecretaria() {
         </section>
       </main>
 
-      {/* --- SEÇÃO DE TELAS CHEIAS (REMOVIDO EFEITO DE CARD) --- */}
+      {/* MODAL: SOLICITAÇÃO AO ROOT (CADASTRO SISTEMA) */}
+      <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       {/* NOVO ALUNO - FULL SCREEN */}
       {isCadastroModalOpen && (
@@ -302,8 +315,7 @@ export default function DashboardSecretaria() {
         </div>
       )}
 
-      {/* --- SEÇÃO DE MODAIS SOBREPOSTOS (MANTIDOS COMO CARDS) --- */}
-
+      {/* GRADE DE AULAS */}
       {profParaGrade && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setProfParaGrade(null)}></div>
@@ -313,6 +325,7 @@ export default function DashboardSecretaria() {
         </div>
       )}
 
+      {/* DESPACHO DE PEDIDOS */}
       {pedidoParaResponder && (
         <div className="fixed inset-0 z-[10060] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
            <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl relative border border-slate-100 text-left">
@@ -339,7 +352,6 @@ export default function DashboardSecretaria() {
         </div>
       )}
 
-      <FormSolicitacaoSecretaria isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       {documentoAtivo && <GeradorDocumento aluno={documentoAtivo.aluno} tipoDoc={documentoAtivo.tipo} onClose={() => setDocumentoAtivo(null)} />}
       
     </div>
